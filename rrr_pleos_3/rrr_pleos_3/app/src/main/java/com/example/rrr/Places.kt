@@ -75,12 +75,12 @@ object DemoPlaces {
 
     // ── 미국 시나리오 (출근길 1개): 서배너 집 → 현대차그룹 메타플랜트(싼타페 EREV 북미 생산 거점) ──
     val SavannahHome = Place(
-        "집 · Savannah", "집", listOf("집", "savannah", "서배너", "home"), LatLng(32.0514, -81.1138),
+        "Home · Savannah", "Home", listOf("집", "savannah", "서배너", "home"), LatLng(32.0514, -81.1138),
         listOf(Charger("Home Garage L2", ChargerType.Home, 0.25, LatLng(32.0514, -81.1138))),
         parkHours = 10, region = Region.US,
     )
     val Metaplant = Place(
-        "회사 · Hyundai Metaplant", "회사", listOf("회사", "사무실", "metaplant", "메타플랜트", "공장", "office"),
+        "Work · Hyundai Metaplant", "Work", listOf("회사", "사무실", "metaplant", "메타플랜트", "공장", "office"),
         LatLng(32.1594, -81.4394),
         // 직장 완속 요금 $0.18/kWh — 예시값(가정)
         listOf(Charger("Plant Parking L2", ChargerType.Slow, 0.18, LatLng(32.1640, -81.4330))),

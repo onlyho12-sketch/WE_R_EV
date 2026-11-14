@@ -29,6 +29,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rrr.ui.theme.AppText
@@ -45,124 +47,679 @@ private val CEv = Hd.Ev
 private val CGas = Hd.Gas
 private val CWindow = Hd.Navy.copy(alpha = 0.06f)
 
-private fun hourLabel(h: Float) = "${((h.roundToInt() % 24) + 24) % 24}시"
+// ───────────────────── 시간 표시 ─────────────────────
 
-/**
- * ① 에너지 공급 타임라인 — 지금부터 다음날 아침까지 배터리(초록)·연료(주황)가 어떻게 줄고 언제 채워지는지.
- * 싼 충전 시간대(심야 요금 / 주차 중 완속)는 연한 초록 띠로 표시.
- */
+private fun hourLabel(
+    h: Float,
+    region: Region
+): String {
+    val hour = ((h.roundToInt() % 24) + 24) % 24
+
+    return if (region == Region.US) {
+        "%02d:00".format(java.util.Locale.US, hour)
+    } else {
+        "${hour}시"
+    }
+}
+
+// ───────────────────── 그래프 문구 번역 ─────────────────────
+
+private fun supplyLabel(
+    text: String,
+    region: Region
+): String {
+    if (region != Region.US) return text
+
+    return text
+        .replace("주차 중 완속", "Parked L2")
+        .replace("오프피크 요금", "Off-peak rate")
+        .replace("심야 요금", "Off-peak rate")
+        .replace("미드피크 요금", "Mid-peak rate")
+        .replace("피크 요금", "Peak rate")
+        .replace("급속 지나침", "Skip DC fast")
+        .replace("회사 도착", "Work arrival")
+        .replace("집 도착", "Home arrival")
+        .replace(" 도착", " arrival")
+        .replace(" 주유", " refuel")
+}
+
+// ───────────────────── 에너지 공급 타임라인 ─────────────────────
+
 @Composable
-fun SupplyTimelineChart(tl: SupplyTimeline, modifier: Modifier = Modifier) {
+fun SupplyTimelineChart(
+    tl: SupplyTimeline,
+    modifier: Modifier = Modifier,
+    region: Region = Region.KR
+) {
     val tm = rememberTextMeasurer()
-    Column(modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            LegendDot(CEv); Text(" 배터리", color = CSub, fontSize = 11.sp)
-            Spacer(Modifier.width(10.dp))
-            LegendDot(CGas); Text(" 연료", color = CSub, fontSize = 11.sp)
-            Spacer(Modifier.width(10.dp))
-            Box(Modifier.size(width = 14.dp, height = 8.dp).clip(RoundedCornerShape(2.dp)).background(Hd.Navy.copy(alpha = 0.12f)))
-            Text(" 싼 충전 시간", color = CSub, fontSize = 11.sp)
-        }
-        Spacer(Modifier.height(6.dp))
-        Canvas(Modifier.fillMaxWidth().height(150.dp)) {
-            val left = 30.dp.toPx(); val right = size.width - 6.dp.toPx()
-            val top = 18.dp.toPx(); val bottom = size.height - 20.dp.toPx()
-            fun x(h: Float) = left + (h - tl.start) / (tl.end - tl.start) * (right - left)
-            fun y(p: Float) = bottom - p / 100f * (bottom - top)
-            val small = AppText.copy(fontSize = 9.sp, color = CFaint)
+    val isUs = region == Region.US
 
-            // 축 · 눈금 (0/50/100%)
-            listOf(0f, 50f, 100f).forEach { p ->
-                drawLine(CLine, Offset(left, y(p)), Offset(right, y(p)), 1.dp.toPx(),
-                    pathEffect = if (p == 0f) null else PathEffect.dashPathEffect(floatArrayOf(6f, 6f)))
-                val l = tm.measure("${p.roundToInt()}%", small)
-                drawText(l, topLeft = Offset(left - l.size.width - 4.dp.toPx(), y(p) - l.size.height / 2f))
+    Column(modifier = modifier) {
+        // 범례
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LegendDot(CEv)
+
+            Text(
+                text = if (isUs) {
+                    " Battery"
+                } else {
+                    " 배터리"
+                },
+                color = CSub,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.width(10.dp))
+
+            LegendDot(CGas)
+
+            Text(
+                text = if (isUs) {
+                    " Fuel"
+                } else {
+                    " 연료"
+                },
+                color = CSub,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.width(10.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(
+                        width = 14.dp,
+                        height = 8.dp
+                    )
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(
+                        Hd.Navy.copy(alpha = 0.12f)
+                    )
+            )
+
+            Text(
+                text = if (isUs) {
+                    " Low-rate window"
+                } else {
+                    " 싼 충전 시간"
+                },
+                color = CSub,
+                fontSize = 11.sp
+            )
+        }
+
+        Spacer(Modifier.height(6.dp))
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+        ) {
+            if (tl.end <= tl.start) return@Canvas
+
+            val left = 30.dp.toPx()
+            val right = size.width - 6.dp.toPx()
+            val top = 18.dp.toPx()
+            val bottom = size.height - 20.dp.toPx()
+
+            if (right <= left || bottom <= top) {
+                return@Canvas
             }
-            // 시간 눈금 (기간에 따라 1/2/3시간 간격)
-            val step = when { tl.end - tl.start <= 6f -> 1f; tl.end - tl.start <= 12f -> 2f; else -> 3f }
-            var h = ceil(tl.start / step) * step
-            while (h <= tl.end) {
-                val l = tm.measure(hourLabel(h), small)
-                drawText(l, topLeft = Offset(x(h) - l.size.width / 2f, bottom + 4.dp.toPx()))
-                h += step
+
+            val plotWidth = right - left
+
+            fun x(hour: Float): Float {
+                return left +
+                        (hour - tl.start) /
+                        (tl.end - tl.start) * plotWidth
             }
-            // 싼 충전 시간대
-            tl.windows.forEach { w ->
-                val x0 = x(w.start.coerceAtLeast(tl.start)); val x1 = x(w.end.coerceAtMost(tl.end))
-                drawRect(CWindow, Offset(x0, top), Size(x1 - x0, bottom - top))
-                val l = tm.measure(w.label, AppText.copy(fontSize = 9.sp, color = CEv, fontWeight = FontWeight.SemiBold))
-                drawText(l, topLeft = Offset((x0 + 3.dp.toPx()).coerceAtMost(right - l.size.width), top - l.size.height - 1.dp.toPx()))
+
+            fun y(percent: Float): Float {
+                return bottom -
+                        percent / 100f * (bottom - top)
             }
-            // 선 그리기
-            fun line(pts: List<Pt>, color: Color, width: Float, dash: Boolean) {
+
+            val smallStyle = AppText.copy(
+                fontSize = 9.sp,
+                color = CFaint
+            )
+
+            // 세로축: 0%, 50%, 100%
+            listOf(0f, 50f, 100f).forEach { percent ->
+                drawLine(
+                    color = CLine,
+                    start = Offset(left, y(percent)),
+                    end = Offset(right, y(percent)),
+                    strokeWidth = 1.dp.toPx(),
+                    pathEffect = if (percent == 0f) {
+                        null
+                    } else {
+                        PathEffect.dashPathEffect(
+                            floatArrayOf(6f, 6f)
+                        )
+                    }
+                )
+
+                val label = tm.measure(
+                    text = "${percent.roundToInt()}%",
+                    style = smallStyle
+                )
+
+                drawText(
+                    textLayoutResult = label,
+                    topLeft = Offset(
+                        x = left -
+                                label.size.width -
+                                4.dp.toPx(),
+                        y = y(percent) -
+                                label.size.height / 2f
+                    )
+                )
+            }
+
+            // 시간 눈금
+            val step = when {
+                tl.end - tl.start <= 6f -> 1f
+                tl.end - tl.start <= 12f -> 2f
+                else -> 3f
+            }
+
+            var hour = ceil(tl.start / step) * step
+
+            while (hour <= tl.end) {
+                val label = tm.measure(
+                    text = hourLabel(hour, region),
+                    style = smallStyle
+                )
+
+                val labelX = (
+                        x(hour) - label.size.width / 2f
+                        ).coerceIn(
+                        0f,
+                        (size.width - label.size.width)
+                            .coerceAtLeast(0f)
+                    )
+
+                drawText(
+                    textLayoutResult = label,
+                    topLeft = Offset(
+                        x = labelX,
+                        y = bottom + 4.dp.toPx()
+                    )
+                )
+
+                hour += step
+            }
+
+            // 저렴한 충전 시간대
+            tl.windows.forEach { window ->
+                val start = window.start
+                    .coerceAtLeast(tl.start)
+
+                val end = window.end
+                    .coerceAtMost(tl.end)
+
+                if (end > start) {
+                    val x0 = x(start)
+                    val x1 = x(end)
+
+                    drawRect(
+                        color = CWindow,
+                        topLeft = Offset(x0, top),
+                        size = Size(
+                            width = x1 - x0,
+                            height = bottom - top
+                        )
+                    )
+
+                    val label = tm.measure(
+                        text = supplyLabel(
+                            window.label,
+                            region
+                        ),
+                        style = AppText.copy(
+                            fontSize = 9.sp,
+                            color = CEv,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        constraints = Constraints(
+                            maxWidth = plotWidth
+                                .roundToInt()
+                                .coerceAtLeast(1)
+                        )
+                    )
+
+                    val labelX = (
+                            x0 + 3.dp.toPx()
+                            ).coerceIn(
+                            left,
+                            (right - label.size.width)
+                                .coerceAtLeast(left)
+                        )
+
+                    drawText(
+                        textLayoutResult = label,
+                        topLeft = Offset(
+                            x = labelX,
+                            y = top -
+                                    label.size.height -
+                                    1.dp.toPx()
+                        )
+                    )
+                }
+            }
+
+            // 배터리·연료 선
+            fun drawSupplyLine(
+                points: List<Pt>,
+                color: Color,
+                width: Float,
+                dashed: Boolean
+            ) {
+                if (points.isEmpty()) return
+
                 val path = Path()
-                pts.forEachIndexed { i, p -> if (i == 0) path.moveTo(x(p.hour), y(p.pct)) else path.lineTo(x(p.hour), y(p.pct)) }
-                drawPath(path, color, style = Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round,
-                    pathEffect = if (dash) PathEffect.dashPathEffect(floatArrayOf(10f, 7f)) else null))
+
+                points.forEachIndexed { index, point ->
+                    if (index == 0) {
+                        path.moveTo(
+                            x(point.hour),
+                            y(point.pct)
+                        )
+                    } else {
+                        path.lineTo(
+                            x(point.hour),
+                            y(point.pct)
+                        )
+                    }
+                }
+
+                drawPath(
+                    path = path,
+                    color = color,
+                    style = Stroke(
+                        width = width,
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round,
+                        pathEffect = if (dashed) {
+                            PathEffect.dashPathEffect(
+                                floatArrayOf(10f, 7f)
+                            )
+                        } else {
+                            null
+                        }
+                    )
+                )
             }
-            line(tl.fuel, CGas, 2.dp.toPx(), dash = true)
-            line(tl.battery, CEv, 3.dp.toPx(), dash = false)
-            // 지금
-            drawLine(CInk, Offset(x(tl.now), top), Offset(x(tl.now), bottom), 1.dp.toPx())
-            val nowL = tm.measure("지금", AppText.copy(fontSize = 9.sp, color = CInk, fontWeight = FontWeight.Bold))
-            drawText(nowL, topLeft = Offset(x(tl.now) + 3.dp.toPx(), bottom - nowL.size.height - 2.dp.toPx()))
-            // 이벤트 (도착 / 급속 지나침 / 주유)
-            // 라벨은 시간순으로 위·아래 번갈아 배치해서 겹치지 않게
-            tl.events.sortedBy { it.hour }.forEachIndexed { i, e ->
-                val ex = x(e.hour)
-                val pct = (if (e.isFuel) tl.fuel else tl.battery).let { pts -> interp(pts, e.hour) }
-                val c = if (e.isFuel) CGas else CInk
-                drawCircle(Color.White, 5.dp.toPx(), Offset(ex, y(pct)))
-                drawCircle(c, 3.5.dp.toPx(), Offset(ex, y(pct)))
-                val l = tm.measure(e.label, AppText.copy(fontSize = 9.sp, color = c, fontWeight = FontWeight.SemiBold))
-                val above = i % 2 == 0
-                val ly = if (above) (y(pct) - l.size.height - 6.dp.toPx()).coerceAtLeast(0f)
-                else (y(pct) + 6.dp.toPx()).coerceAtMost(bottom - l.size.height)
-                drawText(l, topLeft = Offset((ex - l.size.width / 2f).coerceIn(left, right - l.size.width), ly))
-            }
+
+            drawSupplyLine(
+                points = tl.fuel,
+                color = CGas,
+                width = 2.dp.toPx(),
+                dashed = true
+            )
+
+            drawSupplyLine(
+                points = tl.battery,
+                color = CEv,
+                width = 3.dp.toPx(),
+                dashed = false
+            )
+
+            // 현재 시각
+            drawLine(
+                color = CInk,
+                start = Offset(x(tl.now), top),
+                end = Offset(x(tl.now), bottom),
+                strokeWidth = 1.dp.toPx()
+            )
+
+            val nowLabel = tm.measure(
+                text = if (isUs) "Now" else "지금",
+                style = AppText.copy(
+                    fontSize = 9.sp,
+                    color = CInk,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+
+            drawText(
+                textLayoutResult = nowLabel,
+                topLeft = Offset(
+                    x = (x(tl.now) + 3.dp.toPx())
+                        .coerceIn(
+                            left,
+                            (right - nowLabel.size.width)
+                                .coerceAtLeast(left)
+                        ),
+                    y = bottom -
+                            nowLabel.size.height -
+                            2.dp.toPx()
+                )
+            )
+
+            // 도착·충전·주유 이벤트
+            tl.events
+                .sortedBy { it.hour }
+                .forEachIndexed { index, event ->
+                    val eventX = x(event.hour)
+
+                    val points = if (event.isFuel) {
+                        tl.fuel
+                    } else {
+                        tl.battery
+                    }
+
+                    val percent = interp(
+                        points,
+                        event.hour
+                    )
+
+                    val color = if (event.isFuel) {
+                        CGas
+                    } else {
+                        CInk
+                    }
+
+                    drawCircle(
+                        color = Color.White,
+                        radius = 5.dp.toPx(),
+                        center = Offset(
+                            eventX,
+                            y(percent)
+                        )
+                    )
+
+                    drawCircle(
+                        color = color,
+                        radius = 3.5.dp.toPx(),
+                        center = Offset(
+                            eventX,
+                            y(percent)
+                        )
+                    )
+
+                    val label = tm.measure(
+                        text = supplyLabel(
+                            event.label,
+                            region
+                        ),
+                        style = AppText.copy(
+                            fontSize = 9.sp,
+                            color = color,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1,
+                        constraints = Constraints(
+                            maxWidth = plotWidth
+                                .roundToInt()
+                                .coerceAtLeast(1)
+                        )
+                    )
+
+                    val above = index % 2 == 0
+
+                    val labelY = if (above) {
+                        (
+                                y(percent) -
+                                        label.size.height -
+                                        6.dp.toPx()
+                                ).coerceAtLeast(0f)
+                    } else {
+                        (
+                                y(percent) + 6.dp.toPx()
+                                ).coerceAtMost(
+                                bottom - label.size.height
+                            )
+                    }
+
+                    val labelX = (
+                            eventX - label.size.width / 2f
+                            ).coerceIn(
+                            left,
+                            (right - label.size.width)
+                                .coerceAtLeast(left)
+                        )
+
+                    drawText(
+                        textLayoutResult = label,
+                        topLeft = Offset(
+                            labelX,
+                            labelY
+                        )
+                    )
+                }
         }
     }
 }
 
-private fun interp(pts: List<Pt>, h: Float): Float {
-    val a = pts.lastOrNull { it.hour <= h } ?: return pts.first().pct
-    val b = pts.firstOrNull { it.hour >= h } ?: return pts.last().pct
-    if (b.hour == a.hour) return a.pct
-    return a.pct + (b.pct - a.pct) * (h - a.hour) / (b.hour - a.hour)
+// ───────────────────── 중간 잔량 계산 ─────────────────────
+
+private fun interp(
+    points: List<Pt>,
+    hour: Float
+): Float {
+    if (points.isEmpty()) return 0f
+
+    val before = points.lastOrNull {
+        it.hour <= hour
+    } ?: return points.first().pct
+
+    val after = points.firstOrNull {
+        it.hour >= hour
+    } ?: return points.last().pct
+
+    if (after.hour == before.hour) {
+        return before.pct
+    }
+
+    return before.pct +
+            (after.pct - before.pct) *
+            (hour - before.hour) /
+            (after.hour - before.hour)
 }
 
-@Composable
-private fun LegendDot(c: Color) = Box(Modifier.size(8.dp).clip(CircleShape).background(c))
+// ───────────────────── 범례 점 ─────────────────────
 
-/** ② 기름 전략 카드 — 언제 넣을지 / 어디서 넣을지 / 얼마나 */
 @Composable
-fun GasStrategyCard(g: GasPlan, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(CField).padding(14.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text("연료 ${g.fuelPct}%", color = CInk, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+private fun LegendDot(
+    color: Color
+) {
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .clip(CircleShape)
+            .background(color)
+    )
+}
+
+// ───────────────────── 주유 전략 카드 ─────────────────────
+
+@Composable
+fun GasStrategyCard(
+    g: GasPlan,
+    modifier: Modifier = Modifier
+) {
+    val isUs = g.region == Region.US
+
+    val refillTitle = if (isUs) {
+        when (g.fillInDays) {
+            0 -> "Refuel on the way today"
+            1 -> "Refuel tomorrow"
+            else -> "Refuel in ${g.fillInDays} days"
+        }
+    } else {
+        if (g.fillInDays == 0) {
+            "오늘 가는 길에 넣으세요"
+        } else {
+            "${g.fillDayLabel} 넣으면 돼요"
+        }
+    }
+
+    val refillDescription = if (isUs) {
+        if (g.fillInDays == 0) {
+            "Fuel will fall below $FUEL_REFILL_PCT% after this trip"
+        } else {
+            "Based on the past two weeks: " +
+                    "${distText(DAILY_GAS_KM, g.region)} " +
+                    "of generator driving per day"
+        }
+    } else {
+        if (g.fillInDays == 0) {
+            "이번 이동 후 연료가 ${FUEL_REFILL_PCT}% 아래로 내려가요"
+        } else {
+            "최근 2주 패턴(하루 발전 " +
+                    "${distText(DAILY_GAS_KM, g.region)})이면 " +
+                    "그때까지 충분해요"
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(CField)
+            .padding(14.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                text = if (isUs) {
+                    "Fuel ${g.fuelPct}%"
+                } else {
+                    "연료 ${g.fuelPct}%"
+                },
+                color = CInk,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+
             Spacer(Modifier.width(8.dp))
-            Text("발전 주행 약 ${distText(g.rangeKm.toDouble(), g.region)}", color = CSub, fontSize = 12.sp, modifier = Modifier.padding(bottom = 1.dp))
+
+            Text(
+                text = if (isUs) {
+                    "Generator range: about ${
+                        distText(
+                            g.rangeKm.toDouble(),
+                            g.region
+                        )
+                    }"
+                } else {
+                    "발전 주행 약 ${
+                        distText(
+                            g.rangeKm.toDouble(),
+                            g.region
+                        )
+                    }"
+                },
+                color = CSub,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(
+                    bottom = 1.dp
+                )
+            )
         }
+
         Spacer(Modifier.height(6.dp))
+
         Text(
-            if (g.fillInDays == 0) "오늘 가는 길에 넣으세요" else "${g.fillDayLabel} 넣으면 돼요",
-            color = if (g.fillInDays == 0) Hd.Navy else CInk, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            text = refillTitle,
+            color = if (g.fillInDays == 0) {
+                Hd.Navy
+            } else {
+                CInk
+            },
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
         )
+
         Text(
-            if (g.fillInDays == 0) "이번 이동 후 연료가 ${FUEL_REFILL_PCT}% 아래로 내려가요"
-            else "최근 2주 패턴(하루 발전 ${distText(DAILY_GAS_KM, g.region)})이면 그때까지 충분해요",
-            color = CFaint, fontSize = 11.sp,
+            text = refillDescription,
+            color = CFaint,
+            fontSize = 11.sp
         )
+
         Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(CGas))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(CGas)
+            )
+
             Spacer(Modifier.width(6.dp))
-            Text(g.station.name, color = CInk, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
-            Text(fuelPriceText(g.station.perL, g.region), color = CInk, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+
+            Text(
+                text = g.station.name,
+                color = CInk,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+
+            Text(
+                text = fuelPriceText(
+                    g.station.perL,
+                    g.region
+                ),
+                color = CInk,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
+
         Text(
-            "${fuelVolText(g.liters.toDouble(), g.region)} ≈ ${money(g.cost, g.region)} · 평균가 대비 −${money(g.savingVsAvg, g.region)}",
-            color = CSub, fontSize = 11.sp, modifier = Modifier.padding(start = 14.dp, top = 2.dp),
+            text = if (isUs) {
+                "${
+                    fuelVolText(
+                        g.liters.toDouble(),
+                        g.region
+                    )
+                } ≈ ${
+                    money(
+                        g.cost,
+                        g.region
+                    )
+                } · vs. average: −${
+                    money(
+                        g.savingVsAvg,
+                        g.region
+                    )
+                }"
+            } else {
+                "${
+                    fuelVolText(
+                        g.liters.toDouble(),
+                        g.region
+                    )
+                } ≈ ${
+                    money(
+                        g.cost,
+                        g.region
+                    )
+                } · 평균가 대비 −${
+                    money(
+                        g.savingVsAvg,
+                        g.region
+                    )
+                }"
+            },
+            color = CSub,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(
+                start = 14.dp,
+                top = 2.dp
+            )
         )
     }
 }

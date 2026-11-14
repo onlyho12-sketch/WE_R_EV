@@ -309,13 +309,24 @@ fun planTrip(
         )
         Rule.DestSlow -> plan(
             Energy.Electric,
-            headline = "주차 중 완속 충전",
-            benefit = "다음 주행 ${money((cfg.gasPerKm - slow!!.perKwh / KM_PER_KWH) * chargeKwh * KM_PER_KWH, r)} 절약",
-            action = "도착 전에 완속 빈자리 알려주기",
+            headline = if (r == Region.US) {
+                "Level 2 charging\nwhile parked"
+            } else {
+                "주차 중 완속 충전"
+            },
+            benefit = "다음 주행 ${money((cfg.gasPerKm - slow!!.perKwh / KM_PER_KWH) * chargeKwh * KM_PER_KWH, r)} 절약",action = if (r == Region.US) {
+                "Notify me of available Level 2 chargers"
+            } else {
+                "도착 전에 완속 빈자리 알려주기"
+            },
             actionDone = "✓ 도착 10분 전에 ${slow.name} 빈자리 알려드릴게요",
             kind = ActionKind.SlowChargeAlert,
             reason = "${slow.name} · ${perKwhText(slow.perKwh, r)} · 주차 ${dest.parkHours}시간 동안 ${chargeKwh.roundToInt()}kWh",
-            lrrr = "${dest.short}에 싼 완속 충전기가 있어요. 볼일 보는 동안 채워요.",
+            lrrr = if (r == Region.US) {
+                "There's a low-cost Level 2 charger at ${dest.short}. Charge while you're there."
+            } else {
+                "${dest.short}에 싼 완속 충전기가 있어요. 볼일 보는 동안 채워요."
+            },
             moment = "${dest.short} 도착하면 ${slow.name}에 대세요",
             ev = evKm.roundToInt(), gasOnly = gasKm.roundToInt(),
         )

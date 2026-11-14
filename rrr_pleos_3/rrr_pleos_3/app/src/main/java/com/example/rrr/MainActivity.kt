@@ -905,9 +905,17 @@ private fun TripInputBox(
     onPreset: (Preset) -> Unit,
     modifier: Modifier
 ) {
-    var active by remember { mutableStateOf<TripField?>(null) }
-    var originText by remember(origin) { mutableStateOf(origin.name) }
-    var destText by remember(dest) { mutableStateOf(dest.name) }
+    var active by remember {
+        mutableStateOf<TripField?>(null)
+    }
+
+    var originText by remember(origin) {
+        mutableStateOf(origin.name)
+    }
+
+    var destText by remember(dest) {
+        mutableStateOf(dest.name)
+    }
 
     val focus = LocalFocusManager.current
 
@@ -926,96 +934,177 @@ private fun TripInputBox(
 
     Column(modifier) {
         Column(
-            Modifier.shadow(2.dp, RoundedCornerShape(14.dp))
+            Modifier
+                .shadow(
+                    2.dp,
+                    RoundedCornerShape(14.dp)
+                )
                 .card(14)
         ) {
             Row(
-                Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                modifier = Modifier.padding(
+                    horizontal = 14.dp,
+                    vertical = 8.dp
+                ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
+                // 출발·도착 입력 영역
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // 출발
                     PlaceField(
                         dot = {
                             Box(
-                                Modifier.size(10.dp)
+                                Modifier
+                                    .size(10.dp)
                                     .clip(CircleShape)
-                                    .border(2.dp, Ink, CircleShape)
+                                    .border(
+                                        2.dp,
+                                        Ink,
+                                        CircleShape
+                                    )
                             )
                         },
-                        label = "출발",
+                        label = if (
+                            origin.region == Region.US
+                        ) {
+                            "From"
+                        } else {
+                            "출발"
+                        },
                         value = originText,
-                        onValue = { originText = it },
+                        onValue = {
+                            originText = it
+                        },
                         onFocus = { focused ->
                             if (focused) {
                                 active = TripField.Origin
-                            } else if (active == TripField.Origin) {
+                            } else if (
+                                active == TripField.Origin
+                            ) {
                                 originText = origin.name
                             }
                         },
                         onDone = {
-                            searchPlaces(originText, origin.region).firstOrNull()?.let {
-                                pick(TripField.Origin, it)
-                            }
+                            searchPlaces(
+                                originText,
+                                origin.region
+                            )
+                                .firstOrNull()
+                                ?.let {
+                                    pick(
+                                        TripField.Origin,
+                                        it
+                                    )
+                                }
                         }
                     )
 
                     HorizontalDivider(
                         color = Line,
-                        modifier = Modifier.padding(start = 22.dp)
+                        modifier = Modifier.padding(
+                            start = 22.dp
+                        )
                     )
 
+                    // 도착
                     PlaceField(
                         dot = {
                             Box(
-                                Modifier.size(10.dp)
+                                Modifier
+                                    .size(10.dp)
                                     .clip(CircleShape)
                                     .background(Ink)
                             )
                         },
-                        label = "도착",
+                        label = if (
+                            origin.region == Region.US
+                        ) {
+                            "To"
+                        } else {
+                            "도착"
+                        },
                         value = destText,
-                        onValue = { destText = it },
+                        onValue = {
+                            destText = it
+                        },
                         onFocus = { focused ->
                             if (focused) {
                                 active = TripField.Dest
-                            } else if (active == TripField.Dest) {
+                            } else if (
+                                active == TripField.Dest
+                            ) {
                                 destText = dest.name
                             }
                         },
                         onDone = {
-                            searchPlaces(destText, origin.region).firstOrNull()?.let {
-                                pick(TripField.Dest, it)
-                            }
+                            searchPlaces(
+                                destText,
+                                origin.region
+                            )
+                                .firstOrNull()
+                                ?.let {
+                                    pick(
+                                        TripField.Dest,
+                                        it
+                                    )
+                                }
                         }
                     )
-                }
+                } // 빠져 있던 Column 종료 중괄호
 
                 Spacer(Modifier.width(8.dp))
 
+                // 출발·도착 교환 / Gleo 버튼
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
-                        Modifier.size(40.dp)
+                        modifier = Modifier
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .clickable(onClick = onSwap),
+                            .clickable(
+                                onClick = onSwap
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
-                        LineIcon(Ic.Swap, Sub, size = 20.dp)
+                        LineIcon(
+                            Ic.Swap,
+                            Sub,
+                            size = 20.dp
+                        )
                     }
 
                     Row(
-                        Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .border(1.dp, Line, RoundedCornerShape(20.dp))
-                            .clickable(onClick = onGleo)
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier
+                            .clip(
+                                RoundedCornerShape(20.dp)
+                            )
+                            .border(
+                                1.dp,
+                                Line,
+                                RoundedCornerShape(20.dp)
+                            )
+                            .clickable(
+                                onClick = onGleo
+                            )
+                            .padding(
+                                horizontal = 10.dp,
+                                vertical = 6.dp
+                            ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        LineIcon(Ic.Mic, Navy, size = 14.dp)
+                        LineIcon(
+                            Ic.Mic,
+                            Navy,
+                            size = 14.dp
+                        )
+
                         Spacer(Modifier.width(4.dp))
+
                         Text(
-                            "Gleo",
+                            text = "Gleo",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Navy
@@ -1024,25 +1113,60 @@ private fun TripInputBox(
                 }
             }
 
-            HorizontalDivider(color = Line)
+            HorizontalDivider(
+                color = Line
+            )
 
+            // 기존 우선순위 선택 기능 유지
             PrioritySelector(
-                priority,
-                onPriority,
-                Modifier.fillMaxWidth().padding(8.dp)
+                priority = priority,
+                onPriority = onPriority,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                region = origin.region
             )
         }
 
+        // 시나리오 선택 버튼
         if (active == null) {
             Spacer(Modifier.height(10.dp))
 
             Row(
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.horizontalScroll(
+                    rememberScrollState()
+                ),
+                horizontalArrangement = Arrangement.spacedBy(
+                    8.dp
+                )
             ) {
                 Presets.forEach { preset ->
                     RouteChip(
-                        label = preset.label,
+                        label = if (
+                            origin.region == Region.US
+                        ) {
+                            when (preset.label) {
+                                "🇺🇸 미국 출근길" ->
+                                    "🇺🇸 Commute"
+
+                                "퇴근길" ->
+                                    "Home"
+
+                                "쇼핑" ->
+                                    "Shopping"
+
+                                "부모님 댁" ->
+                                    "Family visit"
+
+                                "캠핑" ->
+                                    "Camping"
+
+                                else ->
+                                    preset.label
+                            }
+                        } else {
+                            preset.label
+                        },
                         active = preset.origin == origin &&
                                 preset.dest == dest
                     ) {
@@ -1052,16 +1176,21 @@ private fun TripInputBox(
             }
         }
 
+        // 장소 검색 결과
         val field = active
 
         if (field != null) {
-            val query = if (field == TripField.Origin) {
+            val query = if (
+                field == TripField.Origin
+            ) {
                 originText
             } else {
                 destText
             }
 
-            val current = if (field == TripField.Origin) {
+            val current = if (
+                field == TripField.Origin
+            ) {
                 origin
             } else {
                 dest
@@ -1071,21 +1200,38 @@ private fun TripInputBox(
                     if (query == current.name) {
                         DemoPlaces.of(origin.region)
                     } else {
-                        searchPlaces(query, origin.region)
+                        searchPlaces(
+                            query,
+                            origin.region
+                        )
                     }
                     ).take(6)
 
             Spacer(Modifier.height(6.dp))
 
             Column(
-                Modifier.fillMaxWidth()
-                    .shadow(2.dp, RoundedCornerShape(14.dp))
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        2.dp,
+                        RoundedCornerShape(14.dp)
+                    )
                     .card(14)
-                    .padding(vertical = 6.dp)
+                    .padding(
+                        vertical = 6.dp
+                    )
             ) {
                 if (suggestions.isEmpty()) {
                     Text(
-                        "‘$query’ 데모 장소 없음 · 강남, 집, 하남, 판교, 잠실, 남양주, 퇴촌…",
+                        text = if (
+                            origin.region == Region.US
+                        ) {
+                            "No demo location for “$query”. " +
+                                    "Try Home, Savannah or Metaplant."
+                        } else {
+                            "‘$query’ 데모 장소 없음 · " +
+                                    "강남, 집, 하남, 판교, 잠실, 남양주, 퇴촌…"
+                        },
                         color = Faint,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(
@@ -1097,7 +1243,10 @@ private fun TripInputBox(
 
                 suggestions.forEach { place ->
                     SuggestionRow(place) {
-                        pick(field, place)
+                        pick(
+                            field,
+                            place
+                        )
                     }
                 }
             }
@@ -1372,13 +1521,32 @@ private fun TripCard(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "배터리 ${distText((soc - RESERVE_PCT).coerceAtLeast(0) / 100.0 * EV_FULL_KM, region)} · 연료 ${plan.gas.fuelPct}%",
+                        if (region == Region.US) {
+                            "Battery ${
+                                distText(
+                                    (soc - RESERVE_PCT).coerceAtLeast(0) /
+                                            100.0 * EV_FULL_KM,
+                                    region
+                                )
+                            } · Fuel ${plan.gas.fuelPct}%"
+                        } else {
+                            "배터리 ${
+                                distText(
+                                    (soc - RESERVE_PCT).coerceAtLeast(0) /
+                                            100.0 * EV_FULL_KM,
+                                    region
+                                )
+                            } · 연료 ${plan.gas.fuelPct}%"
+                        },
                         color = Sub,
                         fontSize = 12.sp
                     )
                     Spacer(Modifier.width(6.dp))
                     // 값의 출처: Pleos Vehicle SDK 실시간 값인지, 데모 값인지
-                    SourceBadge(source)
+                    SourceBadge(
+                        source = source,
+                        region = region
+                    )
                 }
             }
 
@@ -1404,7 +1572,15 @@ private fun TripCard(
             )
 
             Text(
-                plan.energy.label,
+                if (region == Region.US) {
+                    if (plan.energy == Energy.Electric) {
+                        "Battery driving"
+                    } else {
+                        "Generator driving"
+                    }
+                } else {
+                    plan.energy.label
+                },
                 color = if (plan.energy == Energy.Electric) Navy else Sub,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1431,7 +1607,14 @@ private fun TripCard(
         Spacer(Modifier.height(6.dp))
 
         Text(
-            plan.benefit,
+            if (region == Region.US) {
+                plan.benefit
+                    .replace("다음 주행 ", "Next drive: ")
+                    .replace("휘발유 대비 ", "Compared with gasoline: ")
+                    .replace(" 절약", " saved")
+            } else {
+                plan.benefit
+            },
             color = Sub,
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium
@@ -1470,24 +1653,41 @@ private fun TripCard(
         Spacer(Modifier.height(24.dp))
 
         Text(
-            "에너지 공급 계획",
+            if (region == Region.US) "Energy plan" else "에너지 공급 계획",
             color = Ink,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
         )
 
         Text(
-            (
-                    route?.let {
-                        "${distText(it.distanceKm, region)} · 약 ${it.durationMin.toHm()} · "
-                    } ?: ""
-                    ) + "배터리 ${distText(plan.evKm.toDouble(), region)} / 발전 ${distText(plan.gasKm.toDouble(), region)}",
+            text = if (region == Region.US) {
+                (
+                        route?.let {
+                            "${distText(it.distanceKm, region)} · " +
+                                    "About ${it.durationMin} min · "
+                        } ?: ""
+                        ) +
+                        "Battery ${distText(plan.evKm.toDouble(), region)} / " +
+                        "Generator ${distText(plan.gasKm.toDouble(), region)}"
+            } else {
+                (
+                        route?.let {
+                            "${distText(it.distanceKm, region)} · " +
+                                    "약 ${it.durationMin.toHm()} · "
+                        } ?: ""
+                        ) +
+                        "배터리 ${distText(plan.evKm.toDouble(), region)} / " +
+                        "발전 ${distText(plan.gasKm.toDouble(), region)}"
+            },
             color = Faint,
             fontSize = 11.sp
         )
 
         Spacer(Modifier.height(8.dp))
-        SupplyTimelineChart(plan.timeline)
+        SupplyTimelineChart(
+            tl = plan.timeline,
+            region = region
+        )
 
         Spacer(Modifier.height(28.dp))
         HorizontalDivider(color = Line)
@@ -1499,7 +1699,7 @@ private fun TripCard(
         Spacer(Modifier.height(24.dp))
 
         Text(
-            "주유 계획",
+            if (region == Region.US) "Refueling plan" else "주유 계획",
             color = Ink,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
@@ -1525,7 +1725,8 @@ private fun TripCard(
             onStartTrip = onStartTrip,
             onMoment = onMoment,
             onEndTrip = onEndTrip,
-            onSkipToOffPeak = onSkipToOffPeak
+            onSkipToOffPeak = onSkipToOffPeak,
+            region = region
         )
     }
 }
@@ -1537,7 +1738,11 @@ private fun InfraPanel(
     region: Region
 ) {
     Text(
-        "${dest.short} 충전 인프라",
+        if (region == Region.US) {
+            "Charging near ${dest.short}"
+        } else {
+            "${dest.short} 충전 인프라"
+        },
         color = Ink,
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold
@@ -1551,9 +1756,21 @@ private fun InfraPanel(
             .background(Field)
             .padding(14.dp)
     ) {
-        InfraRow("완속", dest.home ?: dest.slow, Navy, region)
+        InfraRow(
+            if (region == Region.US) "Level 2" else "완속",
+            dest.home ?: dest.slow,
+            Navy,
+            region
+        )
+
         Spacer(Modifier.height(8.dp))
-        InfraRow("급속", dest.fast, Navy, region)
+
+        InfraRow(
+            if (region == Region.US) "DC fast" else "급속",
+            dest.fast,
+            Navy,
+            region
+        )
     }
 
     Spacer(Modifier.height(12.dp))
@@ -1660,10 +1877,12 @@ private fun InfraRow(
 private fun PrioritySelector(
     priority: Priority,
     onPriority: (Priority) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
+    region: Region = Region.KR
 ) {
     Row(
-        modifier.clip(RoundedCornerShape(8.dp))
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
             .background(Field)
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp)
@@ -1671,16 +1890,31 @@ private fun PrioritySelector(
         Priority.entries.forEach { item ->
             val active = item == priority
 
+            val title = if (region == Region.US) {
+                when (item) {
+                    Priority.Economy -> "Economy"
+                    Priority.Balance -> "Balanced"
+                    Priority.Time -> "Fastest"
+                }
+            } else {
+                item.label
+            }
+
             Text(
-                item.label,
+                text = title,
                 color = if (active) Surface else Sub,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (active) Blue else Color.Transparent)
-                    .clickable { onPriority(item) }
+                    .background(
+                        if (active) Blue else Color.Transparent
+                    )
+                    .clickable {
+                        onPriority(item)
+                    }
                     .padding(vertical = 8.dp)
             )
         }
@@ -1688,33 +1922,84 @@ private fun PrioritySelector(
 }
 
 @Composable
-private fun SavingsPill(region: Region) {
-    // 최근 30일 트립 기록에서 계산 (하드코딩 숫자 없음)
+private fun SavingsPill(
+    region: Region
+) {
     val month = Ledger.month(region)
-    val saved = month.sumOf { it.savings.coerceAtLeast(0.0) }
-    val totalKm = month.sumOf { it.distanceKm }
-    val evShare = if (totalKm > 0) (month.sumOf { it.evKm } / totalKm * 100).roundToInt().coerceIn(0, 100) else 0
+
+    val saved = month.sumOf {
+        it.savings.coerceAtLeast(0.0)
+    }
+
+    val totalKm = month.sumOf {
+        it.distanceKm
+    }
+
+    val evShare = if (totalKm > 0) {
+        (
+                month.sumOf { it.evKm } /
+                        totalKm * 100
+                )
+            .roundToInt()
+            .coerceIn(0, 100)
+    } else {
+        0
+    }
+
+    val isUs = region == Region.US
 
     Row(
-        Modifier.shadow(2.dp, RoundedCornerShape(12.dp))
+        modifier = Modifier
+            .shadow(
+                2.dp,
+                RoundedCornerShape(12.dp)
+            )
             .card(12)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(
+                horizontal = 18.dp,
+                vertical = 12.dp
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("이번 달 절약", color = Sub, fontSize = 12.sp)
+        Text(
+            text = if (isUs) {
+                "Saved this month"
+            } else {
+                "이번 달 절약"
+            },
+            color = Sub,
+            fontSize = 12.sp
+        )
+
         Spacer(Modifier.width(10.dp))
 
         Text(
-            money(saved, region),
+            text = money(saved, region),
             color = Navy,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(Modifier.width(12.dp))
-        Box(Modifier.width(1.dp).height(12.dp).background(Line))
+
+        Box(
+            Modifier
+                .width(1.dp)
+                .height(12.dp)
+                .background(Line)
+        )
+
         Spacer(Modifier.width(12.dp))
-        Text("배터리 $evShare% · 휘발유 ${100 - evShare}%", color = Sub, fontSize = 12.sp)
+
+        Text(
+            text = if (isUs) {
+                "Battery $evShare% · Gasoline ${100 - evShare}%"
+            } else {
+                "배터리 $evShare% · 휘발유 ${100 - evShare}%"
+            },
+            color = Sub,
+            fontSize = 12.sp
+        )
     }
 }
 
