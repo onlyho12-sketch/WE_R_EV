@@ -14,6 +14,28 @@
 
 <br/>
 
+## 📋 심사 정보
+
+| 항목 | 내용 |
+|---|---|
+| **앱 이름** | WE'R EV — SANTA FE EREV 운전자를 위한 충전 · 주유 전략 코치 (Pleos 차량 앱 + 폰 앱) |
+| **APK (Release)** | **[GitHub Release v1.0.0](https://github.com/onlyho12-sketch/WE_R_EV/releases/tag/v1.0.0)** — `WE_R_EV_Pleos.apk` (차량 앱) · `WE_R_EV_Phone.apk` (폰 앱) |
+| **에뮬레이터** | **Pleos Connect v2.1.0** |
+| **화면 규격** | 2560 × 1440 (가로), Android Automotive API 34 이상 |
+| **폰 앱 환경** | Android 폰 / 에뮬레이터 API 29 이상 |
+| **필요한 설정** | 별도 키 · 계정 설정 없음 — APK 설치 후 바로 실행 (데모 데이터 내장) |
+| **실행 방법** | [🚀 실행 방법](#-실행-방법) · [🎮 시연 조작법](#-시연-조작법) |
+| **시연 영상** | [▶ docs/demo/WERE_EV_demo.mp4](docs/demo/WERE_EV_demo.mp4) (1분 20초) |
+
+**APK로 바로 실행하기**
+
+```bash
+adb install WE_R_EV_Pleos.apk   # Pleos Connect v2.1.0 에뮬레이터에 차량 앱 설치
+adb install WE_R_EV_Phone.apk   # 폰 / 폰 에뮬레이터에 폰 앱 설치
+```
+
+<br/>
+
 ## 📌 목차
 
 - [한눈에 보기](#-한눈에-보기)
@@ -194,7 +216,7 @@ WE_R_EV/
 
 ### 준비물
 - **Android Studio** (JDK는 Android Studio 내장 JBR 사용)
-- **Android Automotive 에뮬레이터** — 2560×1440, API 34 이상 (차량 앱)
+- **Pleos Connect v2.1.0 에뮬레이터** — 2560×1440, API 34 이상 (차량 앱)
 - **Android 폰 / 에뮬레이터** — API 29 이상 (폰 앱)
 - Pleos Playground SDK 는 `settings.gradle.kts` 의 Pleos Nexus 저장소에서 자동으로 받습니다
 
