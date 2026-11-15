@@ -52,11 +52,11 @@ private val SGas = Color(0xFFE58A00)
 
 // ───────────────────────── 설정 모델 ─────────────────────────
 
-/** 차량 화면 We'r ev 위젯에서 르르르가 보여줄 애니메이션 */
-enum class WidgetAnim(val key: String, val title: String, val desc: String, val chip: String) {
-    Auto("auto", "자동 전환", "주행 상태에 맞춰 EV ↔ 발전 애니메이션이 알아서 바뀌어요", "EV ↔ 발전"),
-    Gen("gen", "발전 애니메이션", "르르르가 발전기를 힘차게 돌려요 · 연료 → 전기", "⚡ 발전 중"),
-    Ev("ev", "EV 애니메이션", "르르르가 배터리 옆에서 편안하게 쉬어요", "🔋 EV 주행"),
+/** 차량 화면 WE'R EV 위젯에 띄울 애니메이션 (칩 문구·아이콘은 WereEV_PleosConnect.html 최신 위젯 기준) */
+enum class WidgetAnim(val key: String, val title: String, val desc: String, val chip: String, val icon: Ic) {
+    Auto("auto", "자동 전환", "주행 상태에 맞춰 EV ↔ 발전 애니메이션이 알아서 바뀌어요", "EV ↔ 발전", Ic.Swap),
+    Gen("gen", "발전 애니메이션", "발전기를 힘차게 돌려요 · 연료로 배터리 충전", "발전 중", Ic.Bolt),
+    Ev("ev", "EV 애니메이션", "배터리 전기로 조용히 달려요", "EV 주행", Ic.Battery),
 }
 
 /** 움직임 강도 (운전 중 시선 분산 고려) */
@@ -124,7 +124,7 @@ fun WidgetSettingsPage(modifier: Modifier = Modifier) {
                     color = SInk, letterSpacing = (-0.8).sp,
                 )
                 Spacer(Modifier.height(4.dp))
-                Text("차량 화면(Pleos Connect)의 We'r ev 위젯에서 르르르가 어떻게 움직일지 골라요",
+                Text("차량 화면(Pleos Connect)의 WE'R EV 위젯이 어떻게 움직일지 골라요",
                     color = SSub, fontSize = 16.sp)
             }
             if (pleosLaunch != null) {
@@ -190,11 +190,13 @@ fun WidgetSettingsPage(modifier: Modifier = Modifier) {
             }
         }
 
-        Text(
-            if (pleosLaunch != null) "✓ Pleos Connect 시뮬레이터와 연결됨 · 바꾼 설정은 차량 화면에 바로 반영돼요"
-            else "Pleos Connect 시뮬레이터(:pleos_connect)가 설치되어 있지 않아요 · 설정은 저장되고 설치 후 다시 바꾸면 적용돼요",
-            color = if (pleosLaunch != null) SEv else SFaint, fontSize = 13.sp
-        )
+        // 연결된 상태면 따로 안내하지 않음 (시연용 문구 제거)
+        if (pleosLaunch == null) {
+            Text(
+                "차량 화면과 연결되어 있지 않아요 · 설정은 저장되고 연결되면 적용돼요",
+                color = SFaint, fontSize = 13.sp
+            )
+        }
     }
     }
 }
@@ -237,9 +239,15 @@ private fun AnimOption(anim: WidgetAnim, motion: WidgetMotion, selected: Boolean
             Spacer(Modifier.height(4.dp))
             Text(anim.desc, color = SSub, fontSize = 15.sp, lineHeight = 20.sp, minLines = 2)
             Spacer(Modifier.height(8.dp))
-            Text(anim.chip, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(accent.copy(alpha = 0.1f))
-                    .padding(horizontal = 10.dp, vertical = 4.dp))
+            Row(
+                Modifier.clip(RoundedCornerShape(10.dp)).background(accent.copy(alpha = 0.1f))
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LineIcon(anim.icon, accent, size = 15.dp)
+                Spacer(Modifier.width(5.dp))
+                Text(anim.chip, color = accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
         Box(Modifier.matchParentSize().clickable(onClick = onClick))
     }

@@ -31,6 +31,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -213,6 +215,16 @@ private fun LrringApp(
         } else {
             "$source: ${origin.short} → ${dest.short}"
         }
+
+        // Gleo 는 음성 비서라 결과를 말로도 대답한다
+        if (source == "Gleo") {
+            val reply = if (cmd.origin == null && cmd.destination == null) {
+                "죄송해요, 장소를 찾지 못했어요."
+            } else {
+                "${origin.short}에서 ${dest.short}까지 경로를 잡았어요. 충전 전략도 바로 다시 세울게요."
+            }
+            PleosServices.voice.speakOnce("gleo:${System.nanoTime()}", reply, cfg.ttsLocale)
+        }
     }
 
     LaunchedEffect(gleoCommand.value) {
@@ -288,7 +300,7 @@ private fun LrringApp(
         toast = if (PleosServices.voice.speakOnce(key, plan.widgetMoment, cfg.ttsLocale)) {
             "🔊 ${plan.widgetMoment}"
         } else {
-            "이번 트립에서는 이미 안내했어요 (트립당 1회)"
+            "이번 주행에서는 이미 안내했어요 (주행당 1회)"
         }
     }
 
@@ -297,7 +309,7 @@ private fun LrringApp(
         if (tripId == null) {
             tripId = "trip-${System.currentTimeMillis()}"
             waypointArrived = false
-            toast = "트립 시작 · ${origin.short} → ${dest.short}"
+            toast = "주행 시작 · ${origin.short} → ${dest.short}"
         }
     }
 
@@ -339,9 +351,9 @@ private fun LrringApp(
         Ledger.add(record)
         tripId = null
         toast = if (record.savings > 0) {
-            "트립 종료 · ${money(record.savings, region)} 절약이 WE'R Score에 반영됐어요"
+            "주행 종료 · ${money(record.savings, region)} 절약이 WE'R Score에 반영됐어요"
         } else {
-            "트립 종료 · WE'R Score에 기록됐어요"
+            "주행 종료 · WE'R Score에 기록됐어요"
         }
     }
 
@@ -495,7 +507,7 @@ else {
                     },
                     onSoc = { PleosServices.vehicle.setDemo(soc = it) },
                     onPriority = { priority = it },
-                    onCommand = { applyCommand(it, "르르르") },
+                    onCommand = { applyCommand(it, "Gleo") },
                     onPreset = {
                         origin = it.origin
                         dest = it.dest
@@ -864,7 +876,7 @@ private fun HomePage(
             Text(
                 if (cfg.region == Region.US) "지도 이미지 © Google (목업) · 경로 OSRM · ${cfg.tariffNote}"
                 else "지도 이미지 © NAVER · OpenStreetMap (목업) · 경로 OSRM",
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 color = Sub,
                 modifier = Modifier
                     .background(Surface.copy(alpha = 0.8f))
@@ -1137,7 +1149,7 @@ private fun TripInputBox(
                     rememberScrollState()
                 ),
                 horizontalArrangement = Arrangement.spacedBy(
-                    8.dp
+                    6.dp
                 )
             ) {
                 Presets.forEach { preset ->
@@ -1330,7 +1342,7 @@ private fun SuggestionRow(
             Text(
                 title,
                 color = color,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(start = 6.dp)
                     .border(
@@ -1444,7 +1456,7 @@ private fun GleoDialog(
                     Text(
                         "이 기기에 음성인식이 없어 문장 입력으로 동작해요",
                         color = Faint,
-                        fontSize = 11.sp
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -1487,6 +1499,14 @@ private fun TripCard(
     modifier: Modifier
 ) {
     val region = cfg.region
+    val baseDensity = LocalDensity.current
+    // 전략 패널 전체 글자를 한 번에 키움 (레이아웃 dp 는 그대로)
+    CompositionLocalProvider(
+        LocalDensity provides Density(
+            density = baseDensity.density,
+            fontScale = baseDensity.fontScale * 1.2f
+        )
+    ) {
     Column(
         modifier.background(Surface)
             .drawBehind {
@@ -1500,8 +1520,25 @@ private fun TripCard(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 28.dp, vertical = 24.dp)
     ) {
+        // 숨은 시연 조작 (화면엔 안 보임 — 시연 영상용)
+        //  · 차/캐릭터 길게 누르기 → 주행 시작 / 주행 종료
+        //  · 차/캐릭터 두 번 탭      → 결정적 순간 음성
+        //  · "SANTA FE EREV" 길게    → 시연 패널 열고 닫기
+        var showDemo by remember { mutableStateOf(false) }
+        // 제스처 콜백은 항상 최신 상태(제안 승인 여부 등)를 보도록
+        val latestTripActive by rememberUpdatedState(tools.tripActive)
+        val latestStart by rememberUpdatedState(onStartTrip)
+        val latestEnd by rememberUpdatedState(onEndTrip)
+        val latestMoment by rememberUpdatedState(onMoment)
         Box(
-            modifier = Modifier.offset(x = 12.dp)
+            modifier = Modifier
+                .offset(x = 12.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = { if (latestTripActive) latestEnd() else latestStart() },
+                        onDoubleTap = { latestMoment() }
+                    )
+                }
         ) {
             CarHeroScene(plan.lrrr, plan.energy)
         }
@@ -1516,44 +1553,52 @@ private fun TripCard(
                     color = Ink,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.4).sp
+                    letterSpacing = (-0.4).sp,
+                    modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures(onLongPress = { showDemo = !showDemo })
+                    }
                 )
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        if (region == Region.US) {
-                            "Battery ${
-                                distText(
-                                    (soc - RESERVE_PCT).coerceAtLeast(0) /
-                                            100.0 * EV_FULL_KM,
-                                    region
-                                )
-                            } · Fuel ${plan.gas.fuelPct}%"
-                        } else {
-                            "배터리 ${
-                                distText(
-                                    (soc - RESERVE_PCT).coerceAtLeast(0) /
-                                            100.0 * EV_FULL_KM,
-                                    region
-                                )
-                            } · 연료 ${plan.gas.fuelPct}%"
-                        },
-                        color = Sub,
-                        fontSize = 12.sp
+                Spacer(Modifier.height(8.dp))
+
+                // 배터리 / 연료를 아이콘 + 잔량 + 주행 가능 거리로 한눈에
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    val us = region == Region.US
+                    EnergyChip(
+                        icon = Ic.Battery,
+                        label = if (us) "Battery" else "배터리",
+                        pct = soc,
+                        // 홈 화면 카드와 같은 계산
+                        range = distText(batteryRangeKm(soc).toDouble(), region)
                     )
-                    Spacer(Modifier.width(6.dp))
-                    // 값의 출처: Pleos Vehicle SDK 실시간 값인지, 데모 값인지
+                    EnergyChip(
+                        icon = Ic.Fuel,
+                        label = if (us) "Fuel" else "연료",
+                        pct = plan.gas.fuelPct,
+                        range = distText(fuelRangeKm(plan.gas.fuelPct).toDouble(), region)
+                    )
+                    // 값의 출처: Pleos Vehicle SDK 실시간일 때만 배지 표시
                     SourceBadge(
                         source = source,
                         region = region
                     )
                 }
             }
+        }
 
-            // 시연용 −/+ 는 실차 값이 없을 때만 (실차에서는 Virtual Console 로 바꾼다)
-            if (source == Source.DEMO) {
-                DemoStepper(soc, onSoc)
-            }
+        if (showDemo) {
+            Spacer(Modifier.height(12.dp))
+            DemoTools(
+                state = tools,
+                onStartTrip = onStartTrip,
+                onMoment = onMoment,
+                onEndTrip = onEndTrip,
+                onSkipToOffPeak = onSkipToOffPeak,
+                region = region
+            )
         }
 
         Spacer(Modifier.height(24.dp))
@@ -1610,7 +1655,7 @@ private fun TripCard(
             if (region == Region.US) {
                 plan.benefit
                     .replace("다음 주행 ", "Next drive: ")
-                    .replace("휘발유 대비 ", "Compared with gasoline: ")
+                    .replace("연료로만 갈 때보다 ", "Vs. fuel only: ")
                     .replace(" 절약", " saved")
             } else {
                 plan.benefit
@@ -1680,7 +1725,7 @@ private fun TripCard(
                         "발전 ${distText(plan.gasKm.toDouble(), region)}"
             },
             color = Faint,
-            fontSize = 11.sp
+            fontSize = 12.sp
         )
 
         Spacer(Modifier.height(8.dp))
@@ -1708,26 +1753,37 @@ private fun TripCard(
         Spacer(Modifier.height(8.dp))
         GasStrategyCard(plan.gas)
 
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            plan.reason,
-            color = Faint,
-            fontSize = 11.sp,
-            lineHeight = 15.sp
-        )
-
         Spacer(Modifier.height(20.dp))
+    }
+    } // CompositionLocalProvider (전략 패널 폰트 확대)
+}
 
-        // 시연 도구: 에뮬레이터에서 주행 없이 트립 시작 → 음성 1회 → 종료(점수 반영)를 재현
-        DemoTools(
-            state = tools,
-            onStartTrip = onStartTrip,
-            onMoment = onMoment,
-            onEndTrip = onEndTrip,
-            onSkipToOffPeak = onSkipToOffPeak,
-            region = region
+/** [배터리 아이콘] 배터리 62% · 124km 같은 작은 잔량 칩 */
+@Composable
+private fun EnergyChip(
+    icon: Ic,
+    label: String,
+    pct: Int,
+    range: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Field)
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LineIcon(icon, Navy, size = 14.dp)
+        Spacer(Modifier.width(4.dp))
+        Text(label, color = Sub, fontSize = 12.sp)
+        Spacer(Modifier.width(4.dp))
+        Text(
+            "$pct%",
+            color = Navy,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
         )
+        Text(" · $range", color = Sub, fontSize = 12.sp)
     }
 }
 
@@ -1774,11 +1830,11 @@ private fun InfraPanel(
     }
 
     Spacer(Modifier.height(12.dp))
-    Text("WE'R EV 판단", color = Faint, fontSize = 11.sp)
+    Text("WE'R EV 판단", color = Faint, fontSize = 12.sp)
     Spacer(Modifier.height(4.dp))
 
-    Rule.entries.forEach { currentRule ->
-        val active = currentRule == rule
+    listOf(rule).forEach { currentRule ->
+        val active = true
 
         Row(
             Modifier.fillMaxWidth().padding(vertical = 3.dp),
@@ -1995,193 +2051,10 @@ private fun SavingsPill(
             text = if (isUs) {
                 "Battery $evShare% · Gasoline ${100 - evShare}%"
             } else {
-                "배터리 $evShare% · 휘발유 ${100 - evShare}%"
+                "배터리 $evShare% · 연료 ${100 - evShare}%"
             },
             color = Sub,
             fontSize = 12.sp
-        )
-    }
-}
-
-// ───────────────────── 리워드 플레이 ─────────────────────
-
-@Composable
-private fun PlayPage(
-    points: Int,
-    onMeetDemo: () -> Unit
-) {
-    RingPanel(Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 이번 달 챌린지: 떨어지는 포인트 동전을 가방으로 받는 르르르
-            RrrMomentAnimation(
-                moment = RrrMoment.Collect,
-                modifier = Modifier.size(width = 118.dp, height = 150.dp)
-            )
-
-            Spacer(Modifier.width(15.dp))
-
-            Column(Modifier.weight(1f)) {
-                Text(
-                    "이번 달 챌린지",
-                    color = Ink,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(Modifier.height(4.dp))
-
-                Text(
-                    "충전 계획과 운전 습관을 지키면 포인트가 쌓여요",
-                    color = Sub,
-                    fontSize = 16.sp
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text("보유 포인트", color = Sub, fontSize = 15.sp)
-
-                Text(
-                    "$points P",
-                    color = Navy,
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.6).sp
-                )
-
-                Text("시뮬레이션", color = Faint, fontSize = 12.sp)
-            }
-        }
-    }
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        RingPanel(Modifier.weight(1f)) {
-            Text(
-                "충전 미션",
-                color = Ink,
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(Modifier.height(12.dp))
-            Text("충전 계획 5회 중 4회 실천", color = Sub, fontSize = 16.sp)
-            Spacer(Modifier.height(12.dp))
-
-            LinearProgressIndicator(
-                progress = { .8f },
-                modifier = Modifier.fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = Navy,
-                trackColor = Field,
-                gapSize = 0.dp,
-                drawStopIndicator = {}
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            Text(
-                "달성 시 30P",
-                color = Navy,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        RingPanel(Modifier.weight(1f)) {
-            Text(
-                "에코 드라이빙 미션",
-                color = Ink,
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(Modifier.height(12.dp))
-            Text("급가속 감소 챌린지", color = Sub, fontSize = 16.sp)
-            Spacer(Modifier.height(12.dp))
-
-            LinearProgressIndicator(
-                progress = { .65f },
-                modifier = Modifier.fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = Navy,
-                trackColor = Field,
-                gapSize = 0.dp,
-                drawStopIndicator = {}
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            Text(
-                "달성 시 20P",
-                color = Navy,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        RingPanel(Modifier.weight(1f)) {
-            Text(
-                "EREV 오너 만남",
-                color = Ink,
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(Modifier.height(9.dp))
-            Text("근처 EREV 오너와 만나면 포인트", color = Sub, fontSize = 16.sp)
-            Spacer(Modifier.height(15.dp))
-
-            ActionButton("만남 기록하기 · 10P", onMeetDemo)
-        }
-    }
-
-    RingPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "안전한 챌린지 운영",
-            color = Ink,
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(Modifier.height(7.dp))
-
-        Text(
-            "보상 수치는 데모 데이터이며 실제 차량 탐지·포인트 지급은 구현되지 않았습니다. 안전운전을 방해하는 행동을 유도하지 않습니다.",
-            color = Sub,
-            fontSize = 14.sp
-        )
-    }
-}
-
-// ───────────────────── 공통 버튼 ─────────────────────
-
-@Composable
-private fun ActionButton(
-    title: String,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Blue,
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(8.dp),
-        contentPadding = PaddingValues(
-            horizontal = 16.dp,
-            vertical = 12.dp
-        )
-    ) {
-        Text(
-            title,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center
         )
     }
 }
@@ -2216,7 +2089,7 @@ private val ringMenus = listOf(
     ),
     RingMenu(
         title = "WE'R Widget",
-        detail = "르르르 위젯 애니메이션 설정",
+        detail = "WE'R EV 위젯 애니메이션 설정",
         icon = Ic.Nav,
         destination = 3
     )
@@ -2344,8 +2217,8 @@ private fun WerEvWelcome(
         val batteryPct = soc.coerceIn(0, 100)
         val fuelPct = fuel.coerceIn(0, 100)
 
-        val evKm = (batteryPct / 100.0 * 200).roundToInt()
-        val fuelKm = (fuelPct / 100.0 * 765).roundToInt()
+        val evKm = batteryRangeKm(batteryPct)
+        val fuelKm = fuelRangeKm(fuelPct)
 
         CompositionLocalProvider(
             LocalDensity provides Density(
@@ -2502,14 +2375,6 @@ private fun WerEvWelcome(
                         )
                     }
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    text = "가상 차량 데이터를 이용한 시연 화면",
-                    color = Faint,
-                    fontSize = 9.sp
-                )
             } // Column
         } // CompositionLocalProvider
     } // BoxWithConstraints
@@ -2531,7 +2396,7 @@ private fun VehicleEnergyCard(
         modifier = Modifier
             .fillMaxWidth()
             .card(16)
-            .padding(14.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -2545,25 +2410,25 @@ private fun VehicleEnergyCard(
                 fontWeight = FontWeight.Medium
             )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
 
             Text(
                 text = "$safePercent%",
                 color = accent,
-                fontSize = 30.sp,
+                fontSize = 27.sp,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
 
             Text(
                 text = rangeLabel,
                 color = Sub,
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 maxLines = 1
             )
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
 
             Row(
                 verticalAlignment = Alignment.Bottom
@@ -2571,7 +2436,7 @@ private fun VehicleEnergyCard(
                 Text(
                     text = rangeKm.coerceAtLeast(0).toString(),
                     color = Ink,
-                    fontSize = 30.sp,
+                    fontSize = 27.sp,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -2593,7 +2458,7 @@ private fun VehicleEnergyCard(
             accent = accent,
             modifier = Modifier
                 .width(64.dp)
-                .height(116.dp)
+                .height(100.dp)
         )
     }
 }
@@ -2988,7 +2853,7 @@ private fun ESmartDashboard(
                         Text(
                             "충전 계획을 꾸준히 지킨 덕분이에요",
                             color = Sub,
-                            fontSize = 11.sp
+                            fontSize = 12.sp
                         )
                     }
                 }
@@ -3029,7 +2894,7 @@ private fun ESmartDashboard(
                         Text(
                             "충전 · 경제성 · 주행 습관 종합",
                             color = Sub,
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
                             modifier = Modifier.align(
                                 Alignment.CenterHorizontally
                             )
@@ -3055,7 +2920,7 @@ private fun ESmartDashboard(
                             Text(
                                 "100점 만점",
                                 color = chargeColor,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(Hd.NavySoft)
@@ -3147,7 +3012,7 @@ private fun ESmartDashboard(
                         Text(
                             text = "작은 습관이 더 나은 주행을 만들어요.",
                             color = Sub,
-                            fontSize = 10.sp
+                            fontSize = 12.sp
                         )
                     }
 
@@ -3185,7 +3050,7 @@ private fun ESmartDashboard(
                                             } else {
                                                 Sub
                                             },
-                                            fontSize = 10.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
                                             modifier = Modifier
                                                 .clip(RoundedCornerShape(7.dp))
@@ -3287,7 +3152,7 @@ private fun ESmartDashboard(
                         Text(
                             text = "배점 비율 45% · 35% · 20%",
                             color = Faint,
-                            fontSize = 10.sp
+                            fontSize = 12.sp
                         )
                     }
                 }
@@ -3372,7 +3237,7 @@ private fun GaugeScore(
             Text(
                 "WE'R Score",
                 color = Sub,
-                fontSize = 11.sp
+                fontSize = 12.sp
             )
         }
     }
@@ -3774,7 +3639,7 @@ private fun ScoreLineChart(
                 Text(
                     text = label,
                     color = Sub,
-                    fontSize = 10.sp
+                    fontSize = 12.sp
                 )
             }
         }
@@ -3788,7 +3653,7 @@ private fun ScoreLineChart(
                 axisMin.toInt()
             }~${axisMax.toInt()}점 · 가상 데이터",
             color = Sub,
-            fontSize = 10.sp
+            fontSize = 12.sp
         )
     }
 }
@@ -3817,14 +3682,14 @@ private fun ScoreLegend(
         Text(
             name,
             color = Sub,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             modifier = Modifier.weight(1f)
         )
 
         Text(
             "${"%.1f".format(score)} / $max",
             color = Ink,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
     }
@@ -3858,7 +3723,7 @@ private fun CoachingLine(
         Text(
             line,
             color = Sub,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             lineHeight = 16.sp
         )
     }
@@ -3899,7 +3764,7 @@ private fun RouteChip(
             )
             .clickable(onClick = onClick)
             .padding(
-                horizontal = 14.dp,
+                horizontal = 10.dp,
                 vertical = 8.dp
             )
     )

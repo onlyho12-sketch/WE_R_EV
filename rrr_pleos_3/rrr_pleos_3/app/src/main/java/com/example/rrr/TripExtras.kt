@@ -131,7 +131,7 @@ fun TripCostCard(
                 "차가 모르는 것: 시간대별 전기요금 · 주유소 가격 · 주차 시간"
 
             abs(cost.savings) < unit ->
-                "이번 트립은 기본 모드와 비슷해요"
+                if (plan.rule == Rule.HomeCharge) "오늘은 기본 모드도 ${cfg.cheapLabel} 요금이라 비용이 같아요" else "이번 주행은 기본 모드와 비용이 같아요"
 
             else ->
                 "이번엔 조금 더 들지만 ${plan.benefit}"
@@ -153,7 +153,7 @@ fun TripCostCard(
                 text = if (isUs) {
                     "Trip cost"
                 } else {
-                    "이번 트립 비용"
+                    "이번 주행 비용"
                 },
                 color = Hd.Ink,
                 fontSize = 13.sp,
@@ -168,7 +168,7 @@ fun TripCostCard(
                     cfg.tariffNote.substringBefore(" ·")
                 },
                 color = Hd.Faint,
-                fontSize = 10.sp
+                fontSize = 12.sp
             )
         }
 
@@ -186,7 +186,7 @@ fun TripCostCard(
                         "기본 모드"
                     },
                     color = Hd.Faint,
-                    fontSize = 11.sp
+                    fontSize = 12.sp
                 )
 
                 Text(
@@ -209,9 +209,9 @@ fun TripCostCard(
 
             Column {
                 Text(
-                    text = "We'r ev",
+                    text = "WE'R EV",
                     color = Hd.Navy,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
                 )
 
@@ -242,13 +242,27 @@ fun TripCostCard(
             }
         }
 
+        if (plan.rule != Rule.TimeFirst && cost.gasOnly > cost.planned.total) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (isUs) {
+                    "Fuel only ${money(cost.gasOnly, r)} → Save ${money(cost.gasOnly - cost.planned.total, r)}"
+                } else {
+                    "연료로만 가면 ${money(cost.gasOnly, r)} → ${money(cost.gasOnly - cost.planned.total, r)} 절약"
+                },
+                color = Hd.Navy,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
         Spacer(Modifier.height(10.dp))
 
         Text(
             text = explanation,
             color = Hd.Sub,
-            fontSize = 11.sp,
-            lineHeight = 15.sp
+            fontSize = 12.sp,
+            lineHeight = 17.sp
         )
 
         Spacer(Modifier.height(4.dp))
@@ -262,21 +276,21 @@ fun TripCostCard(
                 "기본 모드 = 배터리 먼저 쓰고 ${cost.baseline.note}"
             },
             color = Hd.Faint,
-            fontSize = 10.sp,
-            lineHeight = 14.sp
+            fontSize = 12.sp,
+            lineHeight = 17.sp
         )
 
         Text(
             text = if (isUs) {
-                "We'r ev = ${
+                "WE'R EV = ${
                     englishTripCostNote(cost.planned.note)
                 }"
             } else {
-                "We'r ev = ${cost.planned.note}"
+                "WE'R EV = ${cost.planned.note}"
             },
             color = Hd.Faint,
-            fontSize = 10.sp,
-            lineHeight = 14.sp
+            fontSize = 12.sp,
+            lineHeight = 17.sp
         )
     }
 }
@@ -290,17 +304,14 @@ fun SourceBadge(
     region: Region = Region.KR
 ) {
     val live = source == Source.PLEOS
+    if (!live) return   // 데모 데이터일 땐 배지 숨김
 
-    val label = when {
-        !live -> "DEMO"
-        region == Region.US -> "PLEOS live"
-        else -> "PLEOS 실시간"
-    }
+    val label = if (region == Region.US) "PLEOS live" else "PLEOS 실시간"
 
     Text(
         text = label,
         color = if (live) Hd.Navy else Hd.Faint,
-        fontSize = 10.sp,
+        fontSize = 12.sp,
         fontWeight = FontWeight.SemiBold,
         modifier = modifier
             .border(
@@ -375,13 +386,13 @@ fun DemoTools(
                         "내비 ${state.navi} · " +
                         "음성 ${state.voice}" +
                         if (state.tripActive) {
-                            " · 트립 진행 중"
+                            " · 주행 진행 중"
                         } else {
                             ""
                         }
             },
             color = Hd.Faint,
-            fontSize = 10.sp
+            fontSize = 12.sp
         )
 
         Spacer(Modifier.height(8.dp))
@@ -398,9 +409,9 @@ fun DemoTools(
                     }
                 } else {
                     if (state.tripActive) {
-                        "트립 진행 중"
+                        "주행 진행 중"
                     } else {
-                        "트립 시작"
+                        "주행 시작"
                     }
                 },
                 enabled = !state.tripActive,
@@ -423,7 +434,7 @@ fun DemoTools(
                 label = if (isUs) {
                     "End trip"
                 } else {
-                    "트립 종료"
+                    "주행 종료"
                 },
                 enabled = state.tripActive,
                 onClick = onEndTrip,
@@ -458,7 +469,7 @@ private fun ToolButton(
     Text(
         text = label,
         color = if (enabled) Hd.Navy else Hd.Faint,
-        fontSize = 11.sp,
+        fontSize = 12.sp,
         fontWeight = FontWeight.SemiBold,
         textAlign = TextAlign.Center,
         maxLines = 1,
@@ -494,13 +505,7 @@ fun DemoStepper(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StepperButton(
-            label = "−",
-            onClick = {
-                onChange(value - 5)
-            }
-        )
-
+        // −/+ 조절 버튼은 숨기고 값만 표시
         Text(
             text = "$value%",
             color = Hd.Ink,
@@ -508,13 +513,6 @@ fun DemoStepper(
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(50.dp)
-        )
-
-        StepperButton(
-            label = "+",
-            onClick = {
-                onChange(value + 5)
-            }
         )
     }
 }

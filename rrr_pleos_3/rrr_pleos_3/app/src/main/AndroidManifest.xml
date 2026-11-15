@@ -20,6 +20,10 @@
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
+        <!-- Pleos TTS 가 없는 기기에서 안드로이드 기본 TTS 엔진을 찾기 위함 -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         <!-- WE'R Widget 설정 연동: Pleos Connect 시뮬레이터(:pleos_connect) 앱을 찾기 위한 패키지 가시성 -->
         <package android:name="com.example.pleosconnect" />
     </queries>

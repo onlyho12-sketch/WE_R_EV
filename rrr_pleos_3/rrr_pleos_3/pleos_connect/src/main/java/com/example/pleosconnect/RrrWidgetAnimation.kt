@@ -1,6 +1,6 @@
 package com.example.pleosconnect
 
-// ※ 르르링 앱 app/.../RrrWidgetAnimation.kt 와 같은 그림. (여기는 motion 을 문자열 키로 받음)
+// ※ WE'R EV 앱 app/.../RrrWidgetAnimation.kt 와 같은 그림 (WereEV_PleosConnect.html 최신 위젯 기준). (여기는 motion 을 문자열 키로 받음)
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -39,7 +40,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /*
- * 르르르 상태 위젯 애니메이션 — rereureu_A_발전모드.html / rereureu_B_EV모드.html 을 Compose Canvas 로 옮긴 것.
+ * WE'R EV 상태 위젯 애니메이션 — WereEV_PleosConnect.html 의 최신 위젯(wGEN / wEV)을 Compose Canvas 로 옮긴 것.
  * SVG 좌표(viewBox 0 0 320 280)와 키프레임 값을 그대로 사용한다. WebView 없이 그려서 기기를 타지 않는다.
  */
 
@@ -48,7 +49,11 @@ import kotlin.math.sin
  * @param cycle true 면 3.5초마다 EV ↔ 발전 을 번갈아 보여줌 (자동 전환 미리보기)
  */
 @Composable
-fun RrrWidgetAnimation(mode: String, motion: String, modifier: Modifier = Modifier, cycle: Boolean = false) {
+fun RrrWidgetAnimation(
+    mode: String, motion: String, modifier: Modifier = Modifier, cycle: Boolean = false,
+    /** 연료통 잔량 0..1 (HTML 위젯 기본값 0.64) */
+    fuel: Float = 0.64f,
+) {
     val rate = when (motion) { "calm" -> 0.5f; "off" -> 0f; else -> 1f }
     var clock by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(rate) {
@@ -71,10 +76,10 @@ fun RrrWidgetAnimation(mode: String, motion: String, modifier: Modifier = Modifi
 
     Box(modifier) {
         Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = genAlpha }) {
-            if (genAlpha > 0.01f) fitViewBox { drawGen(if (rate == 0f) FROZEN_MS else clock) }
+            if (genAlpha > 0.01f) fitViewBox { drawGen(if (rate == 0f) FROZEN_MS else clock, fuel) }
         }
         Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = 1f - genAlpha }) {
-            if (genAlpha < 0.99f) fitViewBox { drawEv(if (rate == 0f) FROZEN_MS else clock) }
+            if (genAlpha < 0.99f) fitViewBox { drawEv(if (rate == 0f) FROZEN_MS else clock, fuel) }
         }
     }
 }
@@ -109,13 +114,23 @@ private object Paths {
     val eyeEvL = p("M 130 118 Q 136 123 142 118")
     val eyeEvR = p("M 168 118 Q 174 123 180 118")
     val sweat = p("M 185 98 C 185 98 190 105 190 108.5 A 5 5 0 1 1 180 108.5 C 180 105 185 98 185 98 Z")
-    val guideL = p("M 24 176 Q 56 174 86 184")
-    val guideR = p("M 244 166 Q 251 163 257 168")
-    val badgeDrop = p("M 11 10 C 11 10 16 16.5 16 19.5 A 5 5 0 1 1 6 19.5 C 6 16.5 11 10 11 10 Z")
-    val fuel1 = p("M 44 166 C 44 166 50 174 50 177.5 A 6 6 0 1 1 38 177.5 C 38 174 44 166 44 166 Z")
-    val fuel2 = p("M 44 168 C 44 168 49 174.5 49 177.5 A 5 5 0 1 1 39 177.5 C 39 174.5 44 168 44 168 Z")
     val bolt1 = p("M 207 146 L 198 159 L 205 159 L 202 171 L 213 157 L 206 157 Z")
-    val bolt2 = p("M 196 144 L 190 153 L 195 153 L 193 161 L 200 152 L 195 152 Z")
+    /** 발전기 몸통 안 번개 (발전 모드에서 깜빡임) */
+    val genBolt = p("M 240 203 L 231 218 L 237 218 L 234 231 L 244 215 L 238 215 Z")
+    /** 연료통 → 발전기 호스 */
+    val hose = p("M 47 234 C 60 234 60 252 76 252 L 206 252 C 216 252 220 249 220 243")
+    /** 발전기 → 배터리 전선 */
+    val wire = p("M 241 224 C 252 224 250 200 262 200")
+    /** 호스를 타고 가는 연료 방울 (0,0 중심) */
+    val hoseDrop = p("M 0 -5.5 C 0 -5.5 4.2 0 4.2 2.4 A 4.2 4.2 0 1 1 -4.2 2.4 C -4.2 0 0 -5.5 0 -5.5 Z")
+    // 연료통
+    val canHandle = p("M 22 199 V 191 Q 22 188 25 188 H 37 Q 40 188 40 191 V 199")
+    val canSpout = p("M 13 202 L 8 192 L 14 189.5 L 19 199")
+    val canDrop = p("M 29 207 C 29 207 33.5 212.5 33.5 215.5 A 4.5 4.5 0 1 1 24.5 215.5 C 24.5 212.5 29 207 29 207 Z")
+    val canWave = p("M -3 216 q 4 -2.6 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 v 5 h -56 z")
+    val canClip = Path().apply {
+        addRoundRect(androidx.compose.ui.geometry.RoundRect(13f, 203f, 45f, 239f, CornerRadius(4f)))
+    }
     val sparkBolt = p("M 290 131 l -3 5 h 3 l -2 5 l 5 -6 h -3 l 2 -4 z")
     val star = p("M 236 100 L 238 105 L 243 107 L 238 109 L 236 114 L 234 109 L 229 107 L 234 105 Z")
 }
@@ -170,10 +185,15 @@ private fun DrawScope.arm(sx: Float, sy: Float, hx: Float, hy: Float) {
     line(sx, sy, hx, hy, Skin, 11f)
 }
 
-private fun DrawScope.generator(kx: Float, ky: Float, a: Float) {
+private fun DrawScope.generator(kx: Float, ky: Float, a: Float, boltAlpha: Float = -1f) {
     rrect(222f, 194f, 30f, 48f, 6f, Color(0xFF64748B), Ink, 2.8f, a)
-    line(229f, 210f, 245f, 210f, Color(0xFF94A3B8), 2.4f, a)
-    line(229f, 218f, 245f, 218f, Color(0xFF94A3B8), 2.4f, a)
+    if (boltAlpha >= 0f) {
+        // 발전 중: 몸통 안 번개가 깜빡
+        shape(Paths.genBolt, Color(0xFFFACC15), Ink, 1.8f, boltAlpha)
+    } else {
+        line(229f, 210f, 245f, 210f, Color(0xFF94A3B8), 2.4f, a)
+        line(229f, 218f, 245f, 218f, Color(0xFF94A3B8), 2.4f, a)
+    }
     circle(237f, 178f, 15f, Color(0xFFF8FAFC), Ink, 3f, a)
     circle(237f, 178f, 8f, Color(0xFFFDE68A), Color(0xFFF59E0B), 2f, a)
     line(237f, 178f, kx, ky, Ink, 3f, a)
@@ -209,26 +229,52 @@ private fun DrawScope.batteryShell() {
     rrect(261f, 149f, 38f, 64f, 8f, Color.White, Ink, 3f)
 }
 
-private fun DrawScope.fuelBadge(dim: Boolean) {
-    val a = if (dim) 0.3f else 1f
-    val fill = if (dim) Color(0xFFE5E7EB) else Color(0xFFFEF3C7)
-    val accent = if (dim) Color(0xFF9CA3AF) else Color(0xFFF5A623)
-    withTransform({ translate(14f, 156f) }) {
-        rrect(0f, 4f, 22f, 26f, 5f, fill, accent, 2.2f, a)
-        drawPath(Paths.badgeDrop, accent, alpha = a)
-    }
+/** 그룹 전체에 투명도 (겹친 도형이 진해지지 않게) */
+private fun DrawScope.group(alpha: Float, block: DrawScope.() -> Unit) {
+    if (alpha >= 0.999f) { block(); return }
+    drawContext.canvas.saveLayer(
+        androidx.compose.ui.geometry.Rect(0f, 0f, 320f, 280f),
+        androidx.compose.ui.graphics.Paint().apply { this.alpha = alpha }
+    )
+    block()
+    drawContext.canvas.restore()
 }
+
+/** 연료통 (잔량 0..1 + 출렁이는 표면) */
+private fun DrawScope.fuelCan(level: Float, waveX: Float) {
+    shape(Paths.canHandle, Color.White, Ink, 2.8f)
+    shape(Paths.canSpout, Color(0xFFF5A623), Ink, 2.4f)
+    rrect(10f, 198f, 38f, 44f, 7f, Color.White, Ink, 3f)
+    val top = 239f - 36f * level.coerceIn(0f, 1f)
+    clipPath(Paths.canClip) {
+        drawRect(Color(0xFFFBBF24), Offset(13f, top), Size(32f, 241f - top))
+        withTransform({ translate(waveX, top - 216f) }) { drawPath(Paths.canWave, Color(0xFFF59E0B)) }
+    }
+    shape(Paths.canDrop, Color.White, Ink, 1.6f)
+}
+
+private val labelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+    textAlign = android.graphics.Paint.Align.CENTER
+    textSize = 10.5f
+    typeface = android.graphics.Typeface.DEFAULT_BOLD
+    color = Color(0xFF64748B).toArgb()
+}
+
+/** SVG stroke-dashoffset 을 Android dash phase 로 */
+private fun dashPhase(offset: Float, period: Float) = ((offset % period) + period) % period
 
 // ───────────────────────── A. 발전 모드 (2.6초 루프) ─────────────────────────
 
-private fun DrawScope.drawGen(t: Float) {
+private fun DrawScope.drawGen(t: Float, fuel: Float) {
     val p = phase(t, 2600f)
     val half = phase(t, 1300f)
 
-    // 흐름 점선
-    val dash = PathEffect.dashPathEffect(floatArrayOf(4f, 4f), (8f - (half * 16f) % 8f) % 8f)
-    drawPath(Paths.guideL, Color(0xFFF5A623), alpha = 0.45f, style = Stroke(2.2f, cap = StrokeCap.Round, pathEffect = dash))
-    drawPath(Paths.guideR, Color(0xFFFBBF24), alpha = 0.45f, style = Stroke(2.2f, cap = StrokeCap.Round, pathEffect = dash))
+    // 발전기 뒤 노란 후광 (blur 대신 겹친 반투명 타원)
+    val ho = kf(half, 0f, 0.12f, 0.5f, 0.42f, 1f, 0.12f)
+    for (i in 0..2) {
+        val g = i * 4f
+        drawOval(Color(0xFFFBBF24), Offset(195f - g, 166f - g), Size(60f + g * 2, 84f + g * 2), alpha = ho * (0.55f - i * 0.15f))
+    }
 
     // 크랭크 한 바퀴 1.3초, 몸이 한 번 들썩
     val a = half * 2f * PI.toFloat()
@@ -238,7 +284,7 @@ private fun DrawScope.drawGen(t: Float) {
 
     withTransform({ translate(-12f, 0f) }) {
         shadow()
-        generator(kx, ky, 1f)
+        generator(kx, ky, 1f, boltAlpha = kf(phase(t, 650f), 0f, 0.55f, 0.5f, 1f, 1f, 0.55f))
         arm(196f, 160f + bob, kx, ky)
         arm(114f, 160f + bob, 91f, 188f + bob * 0.6f + sin(a) * 1.5f)
         withTransform({ translate(0f, bob) }) {
@@ -269,18 +315,51 @@ private fun DrawScope.drawGen(t: Float) {
         rrect(267f, 159f, 26f, 13f, 3f, Color(0xFFFDE047), Color(0xFFF59E0B), 1.5f, co)
     }
 
-    // 연료 → 발전기
-    fuelBadge(dim = false)
-    withTransform({
-        translate(kf(p, 0f, 0f, 0.2f, 16f, 0.75f, 46f, 0.95f, 54f, 1f, 0f), kf(p, 0f, 0f, 0.2f, 2f, 0.75f, 6f, 0.95f, 8f, 1f, 0f))
-        val s = kf(p, 0f, 0.8f, 0.2f, 1f, 0.75f, 0.95f, 0.95f, 0.6f, 1f, 0.8f); scale(s, s, Offset.Zero)
-    }) { shape(Paths.fuel1, Color(0xFFF5A623), Color(0xFFD97706), 1.5f, kf(p, 0f, 0f, 0.2f, 1f, 0.75f, 1f, 0.95f, 0f, 1f, 0f)) }
-    withTransform({
-        translate(kf(p, 0f, 0f, 0.4f, 0f, 0.55f, 18f, 0.88f, 46f, 1f, 54f), kf(p, 0f, 0f, 0.4f, 0f, 0.55f, -1f, 0.88f, 6f, 1f, 8f))
-        val s = kf(p, 0f, 0.8f, 0.4f, 0.8f, 0.55f, 1f, 0.88f, 0.95f, 1f, 0.6f); scale(s, s, Offset.Zero)
-    }) { shape(Paths.fuel2, Color(0xFFFBBF24), Color(0xFFD97706), 1.5f, kf(p, 0f, 0f, 0.4f, 0f, 0.55f, 1f, 0.88f, 1f, 1f, 0f)) }
+    // ① 연료 호스: 연료통 → 발전기 (주황 점선이 흐르고 방울 3개가 타고 감)
+    drawPath(Paths.hose, Ink, style = Stroke(7.5f, cap = StrokeCap.Round))
+    drawPath(Paths.hose, Color(0xFFFFF7E6), style = Stroke(4f, cap = StrokeCap.Round))
+    drawPath(
+        Paths.hose, Color(0xFFF59E0B),
+        style = Stroke(
+            4f, cap = StrokeCap.Round,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 9f), dashPhase(-28f * phase(t, 900f), 14f))
+        )
+    )
+    val pm = androidx.compose.ui.graphics.PathMeasure().apply { setPath(Paths.hose, false) }
+    for (d in floatArrayOf(0f, 800f, 1600f)) {
+        val q = phase(t + d, 2400f)
+        val o = when {
+            q < 0.08f -> q / 0.08f
+            q > 0.88f -> (1f - q) / 0.12f
+            else -> 1f
+        }
+        val pos = pm.getPosition(pm.length * q)
+        withTransform({ translate(pos.x, pos.y) }) {
+            shape(Paths.hoseDrop, Color(0xFFF59E0B), Color(0xFFB45309), 1.3f, o)
+        }
+    }
 
-    // 번개: 발전기 위로 톡 → 배터리로
+    // ② 전선: 발전기 → 배터리
+    drawPath(Paths.wire, Ink, style = Stroke(6f, cap = StrokeCap.Round))
+    drawPath(
+        Paths.wire, Color(0xFFFACC15),
+        style = Stroke(
+            2.8f, cap = StrokeCap.Round,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 3f), dashPhase(-28f * phase(t, 550f), 7f))
+        )
+    )
+
+    // 연료통 (잔량 연동)
+    fuelCan(fuel, 8f * phase(t, 1100f))
+
+    // 단계 라벨
+    val nc = drawContext.canvas.nativeCanvas
+    nc.drawText("연료", 29f, 273f, labelPaint)
+    nc.drawText("›  ›  ›", 150f, 273f, labelPaint)
+    nc.drawText("발전기", 225f, 273f, labelPaint)
+    nc.drawText("배터리", 280f, 273f, labelPaint)
+
+    // 발전기에서 배터리로 들어가는 노란 번개
     withTransform({
         translate(22f, -6f)
         translate(
@@ -290,17 +369,10 @@ private fun DrawScope.drawGen(t: Float) {
         val s = kf(p, 0f, 0.6f, 0.15f, 0.6f, 0.32f, 1.05f, 0.55f, 1f, 0.82f, 0.92f, 0.95f, 0.65f, 1f, 0.6f)
         scale(s, s, Offset(205f, 158f))
     }) {
-        shape(Paths.bolt1, Color(0xFFFACC15), Color(0xFFB45309), 1.8f,
-            kf(p, 0f, 0f, 0.15f, 0f, 0.32f, 1f, 0.82f, 1f, 0.95f, 0f, 1f, 0f))
-    }
-    withTransform({
-        translate(32f, -6f)
-        translate(kf(p, 0f, 0f, 0.45f, 0f, 0.62f, -2f, 0.85f, 12f, 1f, 0f), kf(p, 0f, 4f, 0.45f, 4f, 0.62f, -10f, 0.85f, -12f, 1f, 4f))
-        val s = kf(p, 0f, 0.5f, 0.45f, 0.5f, 0.62f, 0.95f, 0.85f, 0.75f, 1f, 0.5f)
-        scale(s, s, Offset(196f, 154f))
-    }) {
-        shape(Paths.bolt2, Color(0xFFFEF08A), Color(0xFFD97706), 1.5f,
-            kf(p, 0f, 0f, 0.45f, 0f, 0.62f, 1f, 0.85f, 1f, 1f, 0f))
+        shape(
+            Paths.bolt1, Color(0xFFFACC15), Color(0xFFB45309), 1.8f,
+            kf(p, 0f, 0f, 0.15f, 0f, 0.32f, 1f, 0.82f, 1f, 0.95f, 0f, 1f, 0f)
+        )
     }
 }
 
@@ -313,11 +385,8 @@ private val wonPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_
     color = Color(0xFFB45309).toArgb()
 }
 
-private fun DrawScope.drawEv(t: Float) {
+private fun DrawScope.drawEv(t: Float, fuel: Float) {
     val p = phase(t, 3200f)
-
-    drawPath(Paths.guideL, Color(0xFFCBD5E1), alpha = 0.48f,
-        style = Stroke(2.2f, cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))))
 
     // 3.2초 숨쉬기
     val b = p * 2f * PI.toFloat()
@@ -364,7 +433,9 @@ private fun DrawScope.drawEv(t: Float) {
     rrect(267f, 176f, 26f, 13f, 3f, Color(0xFF10B981), null)
     rrect(267f, 159f, 26f, 13f, 3f, Color(0xFF34D399), Color(0xFF059669), 1.5f, kf(p, 0f, 1f, 0.5f, 0.8f, 1f, 1f))
 
-    fuelBadge(dim = true)
+    // 연료 호스 (EV 주행 중: 대기) + 흐린 연료통
+    drawPath(Paths.hose, Color(0xFFCBD5E1), alpha = 0.7f, style = Stroke(6f, cap = StrokeCap.Round))
+    group(0.6f) { fuelCan(fuel, 8f * phase(t, 2600f)) }
 
     // 동전 반짝 (한 루프에 한 번)
     val co = kf(p, 0f, 0f, 0.55f, 0f, 0.68f, 1f, 0.85f, 1f, 1f, 0f)

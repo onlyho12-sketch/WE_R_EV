@@ -34,13 +34,28 @@ class DemoVoiceGateway : VoiceGateway {
     override fun speakOnce(key: String, text: String, locale: Locale): Boolean = spoken.add(key)
 }
 
-/** Pleos TextToSpeech SDK — ON_DEVICE 모드 (앱 등록 불필요) */
+/**
+ * Pleos TextToSpeech SDK — ON_DEVICE 모드 (앱 등록 불필요).
+ * Pleos TTS 서비스가 없는 기기(일반 에뮬레이터 등)에서는 안드로이드 기본 TTS 로 대신 읽는다.
+ */
 class PleosVoiceGateway(private val context: Context) : VoiceGateway {
     private val spoken = mutableSetOf<String>()
     private val _source = MutableStateFlow(Source.DEMO)
     override val source: StateFlow<Source> = _source.asStateFlow()
 
     private var tts: TextToSpeech? = null
+
+    // ── 대체: 안드로이드 기본 TTS ──
+    private var androidTts: android.speech.tts.TextToSpeech? = null
+    private var androidReady = false
+
+    private fun startAndroidTts() {
+        if (androidTts != null) return
+        androidTts = android.speech.tts.TextToSpeech(context.applicationContext) { status ->
+            androidReady = status == android.speech.tts.TextToSpeech.SUCCESS
+            Log.i(TAG, "Android TTS fallback ready=$androidReady")
+        }
+    }
 
     override fun start() {
         if (tts != null) stop()
@@ -54,17 +69,21 @@ class PleosVoiceGateway(private val context: Context) : VoiceGateway {
                 }
 
                 override fun onFailure(error: ErrorType) {
-                    Log.w(TAG, "TTS init failed → DEMO: $error")
+                    Log.w(TAG, "TTS init failed → Android TTS: $error")
                     _source.value = Source.DEMO
+                    startAndroidTts()
                 }
             })
         } catch (t: Throwable) {
-            Log.w(TAG, "TTS SDK unavailable → DEMO: $t")
+            Log.w(TAG, "TTS SDK unavailable → Android TTS: $t")
             tts = null
+            startAndroidTts()
         }
     }
 
     override fun stop() {
+        androidTts?.let { runCatching { it.shutdown() } }
+        androidTts = null; androidReady = false
         val t = tts ?: return
         tts = null
         _source.value = Source.DEMO
@@ -80,6 +99,18 @@ class PleosVoiceGateway(private val context: Context) : VoiceGateway {
                 // isFinal = true: 한 문장으로 끝나는 발화
                 t.speak(text, true)
             }.onFailure { Log.w(TAG, "speak failed: $it") }
+        } else {
+            val a = androidTts
+            if (a != null && androidReady) {
+                a.language = locale
+                a.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, key)
+                // 시연 영상용: 같은 목소리를 파일로도 남긴다 (차량 오디오 채널은 에뮬레이터 녹화에 안 담김).
+                // 파일 이름 = 말한 시각(ms) → 녹화 후 그 시각에 맞춰 영상에 합친다
+                runCatching {
+                    val dir = java.io.File(context.cacheDir, "tts").apply { mkdirs() }
+                    a.synthesizeToFile(text, null, java.io.File(dir, "${System.currentTimeMillis()}.wav"), "$key#file")
+                }
+            } else Log.w(TAG, "no TTS available")
         }
         return true
     }

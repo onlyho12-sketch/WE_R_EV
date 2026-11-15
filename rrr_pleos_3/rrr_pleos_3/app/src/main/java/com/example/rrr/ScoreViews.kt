@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -118,7 +119,7 @@ fun WerScoreDashboard(region: Region, modifier: Modifier = Modifier) {
     val lostOffPeak = SCORE_OFFPEAK_MAX - now.offPeakScore
     val missed = now.judged - now.followed
     val tip = when {
-        now.trips == 0 -> "이번 주 첫 트립을 시작해 보세요."
+        now.trips == 0 -> "이번 주 첫 주행을 시작해 보세요."
         lostFollow >= lostSaving && lostFollow >= lostOffPeak && missed > 0 ->
             "놓친 제안 ${missed}회만 실천해도 최대 +${lostFollow.roundToInt()}점이에요."
         lostOffPeak >= lostSaving && lostOffPeak > 0.5 ->
@@ -310,9 +311,6 @@ fun WerScoreDashboard(region: Region, modifier: Modifier = Modifier) {
                         labels = listOf("3주 전", "2주 전", "지난주", "이번 주"),
                         modifier = Modifier.fillMaxWidth().weight(1f),
                     )
-                    if (Ledger.hasSimulated(region)) {
-                        Text("시뮬레이션 데이터 포함 · 트립을 마치면 바로 반영돼요", color = Faint, fontSize = 12.sp)
-                    }
                 }
 
                 Panel(Modifier.weight(1f).fillMaxHeight()) {
@@ -525,40 +523,38 @@ fun WerRewardsPage(region: Region, modifier: Modifier = Modifier) {
                 MissionPanel(
                     title = "제안 실천 미션",
                     body = "이번 주 WE'R Score 80점 달성",
-                    progress = (now.total / 80.0).toFloat(),
-                    status = "현재 ${now.total.roundToInt()}점 · 제안 ${now.judged}회 중 ${now.followed}회 실천",
+                    value = "${now.total.roundToInt()}점",
+                    goal = "목표 80점",
+                    progress = (now.total / 100.0).toFloat(),
+                    status = "제안 ${now.judged}회 중 ${now.followed}회 실천",
                     reward = if (now.total >= 80.0) "달성! +50P 적립" else "달성 시 +50P",
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 MissionPanel(
                     title = "${cfg.cheapLabel} 충전 미션",
                     body = "충전의 80% 이상을 싼 시간대에",
-                    progress = (now.offPeakRate / 0.8).toFloat(),
-                    status = "현재 ${(now.offPeakRate * 100).roundToInt()}% · ${now.chargedKwh.roundToInt()}kWh 중 ${now.offPeakKwh.roundToInt()}kWh",
+                    value = "${(now.offPeakRate * 100).roundToInt()}%",
+                    goal = "목표 80%",
+                    progress = now.offPeakRate.toFloat(),
+                    status = "${now.chargedKwh.roundToInt()}kWh 중 ${now.offPeakKwh.roundToInt()}kWh를 싼 시간에",
                     reward = "WE'R Score 20점에 반영",
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 // 포인트는 어디서 오고 어디에 쓰나요
                 Panel(Modifier.weight(1.5f).fillMaxHeight()) {
                     PanelTitle("포인트는 어디서 오고 어디에 쓰나요")
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        "포인트는 사용자의 절약액이 아니라 제휴사 예산으로 지급돼요 " +
-                            "(OEM 멤버십 · 충전 사업자 · 유틸리티 관리형 충전 프로그램) — 제휴 가정",
-                        color = Sub, fontSize = 14.sp, lineHeight = 19.sp,
+                        "내 절약액이 아니라 제휴사 예산으로 지급돼요",
+                        color = Sub, fontSize = 15.sp, lineHeight = 20.sp,
                     )
-                    Column(Modifier.weight(1f).padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        UseRow("①", "현대차 멤버십 포인트 전환", Modifier.weight(1f))
-                        UseRow("②", "충전 크레딧 (충전 사업자 제휴)", Modifier.weight(1f))
-                        UseRow("③", "유틸리티 관리형 충전 · 수요반응 리베이트 연계", Modifier.weight(1f))
+                    Column(Modifier.weight(1f).padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        UseRow(Ic.Reward, "현대차 멤버십 포인트 전환", "OEM 멤버십", Modifier.weight(1f))
+                        UseRow(Ic.Bolt, "충전 크레딧", "충전 사업자 제휴", Modifier.weight(1f))
+                        UseRow(Ic.Home, "수요반응 리베이트 연계", "유틸리티 관리형 충전 프로그램", Modifier.weight(1f))
                     }
                 }
             }
-
-            Text(
-                "보상 수치는 데모 데이터이며 실제 포인트 지급·제휴는 구현되지 않았습니다(가정). 안전운전을 방해하는 행동을 유도하지 않습니다.",
-                color = Faint, fontSize = 13.sp,
-            )
         }
     }
 }
@@ -567,18 +563,35 @@ fun WerRewardsPage(region: Region, modifier: Modifier = Modifier) {
 private fun MissionPanel(
     title: String,
     body: String,
+    value: String,
+    goal: String,
     progress: Float,
     status: String,
     reward: String,
     modifier: Modifier = Modifier,
+    target: Float = 0.8f,
 ) {
     Panel(modifier) {
         PanelTitle(title)
-        Spacer(Modifier.height(8.dp))
-        Text(body, color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Medium)
+        Spacer(Modifier.height(6.dp))
+        Text(body, color = Sub, fontSize = 16.sp)
         Spacer(Modifier.weight(1f))
-        Box(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)).background(Field)) {
-            Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(Navy))
+        // 가운데: 지금 값을 크게
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, color = Navy, fontSize = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp)
+            Spacer(Modifier.width(8.dp))
+            Text(goal, color = Faint, fontSize = 15.sp, modifier = Modifier.padding(bottom = 7.dp))
+        }
+        Spacer(Modifier.height(10.dp))
+        // 100 기준 진행 바 + 목표 눈금 (두 미션의 차이가 보이도록)
+        BoxWithConstraints(Modifier.fillMaxWidth().height(16.dp)) {
+            Box(Modifier.fillMaxWidth().height(10.dp).align(Alignment.Center).clip(RoundedCornerShape(5.dp)).background(Field)) {
+                Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(Navy))
+            }
+            Box(
+                Modifier.offset(x = maxWidth * target - 1.dp).width(2.dp).fillMaxHeight()
+                    .background(Ink.copy(alpha = 0.55f))
+            )
         }
         Spacer(Modifier.height(8.dp))
         Text(status, color = Sub, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -588,14 +601,20 @@ private fun MissionPanel(
 }
 
 @Composable
-private fun UseRow(no: String, text: String, modifier: Modifier = Modifier) {
+private fun UseRow(icon: Ic, title: String, sub: String, modifier: Modifier = Modifier) {
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Field).padding(horizontal = 14.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Field).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(no, color = Navy, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.width(10.dp))
-        Text(text, color = Ink, fontSize = 15.sp, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text("가정", color = Faint, fontSize = 12.sp)
+        // 네이비 원 안에 선 아이콘
+        Box(Modifier.size(44.dp).clip(CircleShape).background(Hd.NavySoft), contentAlignment = Alignment.Center) {
+            LineIcon(icon, Navy, size = 24.dp)
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = Ink, fontSize = 19.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(sub, color = Faint, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Text("›", color = Faint, fontSize = 22.sp)
     }
 }

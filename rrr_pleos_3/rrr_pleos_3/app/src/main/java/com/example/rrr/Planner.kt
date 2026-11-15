@@ -24,6 +24,10 @@ const val EV_FULL_KM = BATTERY_KWH * KM_PER_KWH
 const val RESERVE_PCT = 10
 const val GAS_KM_PER_L = 14.0
 const val FUEL_TANK_L = 50.0
+
+/** 화면에 보이는 주행 가능 거리 — 홈 카드·전략 칩·주유 계획이 모두 이 값을 쓴다 */
+fun batteryRangeKm(socPct: Int): Int = (socPct.coerceIn(0, 100) / 100.0 * 200).roundToInt()
+fun fuelRangeKm(fuelPct: Int): Int = (fuelPct.coerceIn(0, 100) / 100.0 * 765).roundToInt()
 const val SLOW_KW = 7.0
 const val FAST_DETOUR_MIN = 25
 /** 집 충전 목표 (Vehicle SDK setEvChargePercentLimit 로 보내는 값) */
@@ -99,7 +103,12 @@ data class CostBreakdown(val elec: Double, val gas: Double, val note: String) {
  *   3) 쓴 연료는 지역 평균 가격으로 다시 채움
  * planned = We'r ev 제안대로 (싼 시간대 집충전 / 목적지 완속 / 급속 생략 / 배터리 보존, 주유는 고른 주유소 가격)
  */
-data class TripCost(val baseline: CostBreakdown, val planned: CostBreakdown) {
+data class TripCost(
+    val baseline: CostBreakdown,
+    val planned: CostBreakdown,
+    /** 같은 거리를 휘발유(발전)로만 갔을 때 — 제목의 "연료 대비 절약"과 비용 카드가 같은 기준을 쓰도록 */
+    val gasOnly: Double = 0.0,
+) {
     val savings: Double get() = baseline.total - planned.total
 }
 
@@ -141,7 +150,7 @@ fun planGas(
     today: LocalDate = LocalDate.now(),
 ): GasPlan {
     val afterTrip = fuelPct - tripGasKm / GAS_KM_PER_L / FUEL_TANK_L * 100
-    val rangeKm = (fuelPct / 100.0 * FUEL_TANK_L * GAS_KM_PER_L).roundToInt()
+    val rangeKm = fuelRangeKm(fuelPct)   // 홈 화면·전략 칩과 같은 값
     val spareKm = (afterTrip - FUEL_REFILL_PCT) / 100.0 * FUEL_TANK_L * GAS_KM_PER_L
     val days = if (spareKm <= 0) 0 else (spareKm / DAILY_GAS_KM).toInt()
     val day = today.plusDays(days.toLong())
@@ -269,7 +278,7 @@ fun planTrip(
             Rule.TimeFirst -> "충전 정차 없이 발전 주행"
         },
     )
-    val cost = TripCost(baseline, planned)
+    val cost = TripCost(baseline, planned, gasOnly = distKm * cfg.gasPerKm)
 
     fun plan(
         energy: Energy, headline: String, benefit: String, action: String, actionDone: String, kind: ActionKind,
@@ -297,7 +306,7 @@ fun planTrip(
         Rule.HomeCharge -> plan(
             Energy.Electric,
             headline = if (mixed) "배터리 우선, 부족분은 발전" else "배터리로 귀가 후\n${cfg.cheapLabel} 충전",
-            benefit = "휘발유 대비 ${money((cfg.gasPerKm - cheap.perKwh / KM_PER_KWH) * evKm, r)} 절약",
+            benefit = "연료로만 갈 때보다 ${money(cost.gasOnly - planned.total, r)} 절약",
             action = if (h1 >= wStart) "도착하면 바로 ${cfg.cheapLabel} 충전" else "${clock(wStart)} ${cfg.cheapLabel} 충전 맡기기",
             actionDone = "✓ ${clock(homeStart)} ${cfg.cheapLabel} 요금에 충전 시작 · 목표 $CHARGE_TARGET_PCT%",
             kind = ActionKind.ScheduleHomeCharge,

@@ -108,7 +108,7 @@ fun SupplyTimelineChart(
                     " 배터리"
                 },
                 color = CSub,
-                fontSize = 11.sp
+                fontSize = 12.sp
             )
 
             Spacer(Modifier.width(10.dp))
@@ -122,7 +122,7 @@ fun SupplyTimelineChart(
                     " 연료"
                 },
                 color = CSub,
-                fontSize = 11.sp
+                fontSize = 12.sp
             )
 
             Spacer(Modifier.width(10.dp))
@@ -146,7 +146,7 @@ fun SupplyTimelineChart(
                     " 싼 충전 시간"
                 },
                 color = CSub,
-                fontSize = 11.sp
+                fontSize = 12.sp
             )
         }
 
@@ -182,7 +182,7 @@ fun SupplyTimelineChart(
             }
 
             val smallStyle = AppText.copy(
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 color = CFaint
             )
 
@@ -280,7 +280,7 @@ fun SupplyTimelineChart(
                             region
                         ),
                         style = AppText.copy(
-                            fontSize = 9.sp,
+                            fontSize = 11.sp,
                             color = CEv,
                             fontWeight = FontWeight.SemiBold
                         ),
@@ -381,7 +381,7 @@ fun SupplyTimelineChart(
             val nowLabel = tm.measure(
                 text = if (isUs) "Now" else "지금",
                 style = AppText.copy(
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     color = CInk,
                     fontWeight = FontWeight.Bold
                 )
@@ -449,7 +449,7 @@ fun SupplyTimelineChart(
                             region
                         ),
                         style = AppText.copy(
-                            fontSize = 9.sp,
+                            fontSize = 12.sp,
                             color = color,
                             fontWeight = FontWeight.SemiBold
                         ),
@@ -464,27 +464,48 @@ fun SupplyTimelineChart(
 
                     val above = index % 2 == 0
 
-                    val labelY = if (above) {
-                        (
+                    // 그래프 왼쪽 끝(출발 직후)에 붙은 점이면 글자를 점 오른쪽에 둬서
+                    // 축 눈금·'지금' 표시와 겹치지 않게 한다
+                    val nearStart = eventX - label.size.width / 2f < left + 4.dp.toPx()
+
+                    val labelY = when {
+                        nearStart -> (y(percent) - label.size.height - 4.dp.toPx())
+                            .coerceAtLeast(0f)
+                        above -> (
                                 y(percent) -
                                         label.size.height -
                                         6.dp.toPx()
                                 ).coerceAtLeast(0f)
-                    } else {
-                        (
+                        else -> (
                                 y(percent) + 6.dp.toPx()
                                 ).coerceAtMost(
                                 bottom - label.size.height
                             )
                     }
 
-                    val labelX = (
+                    val labelX = if (nearStart) {
+                        (eventX + 7.dp.toPx())
+                            .coerceAtMost((right - label.size.width).coerceAtLeast(left))
+                    } else {
+                        (
                             eventX - label.size.width / 2f
                             ).coerceIn(
                             left,
                             (right - label.size.width)
                                 .coerceAtLeast(left)
                         )
+                    }
+
+                    // 점선·곡선 위에 겹쳐도 읽히도록 흰 바탕
+                    drawRoundRect(
+                        color = Color.White.copy(alpha = 0.9f),
+                        topLeft = Offset(labelX - 2.dp.toPx(), labelY),
+                        size = androidx.compose.ui.geometry.Size(
+                            label.size.width + 4.dp.toPx(),
+                            label.size.height.toFloat()
+                        ),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
+                    )
 
                     drawText(
                         textLayoutResult = label,
@@ -642,7 +663,7 @@ fun GasStrategyCard(
         Text(
             text = refillDescription,
             color = CFaint,
-            fontSize = 11.sp
+            fontSize = 12.sp
         )
 
         Spacer(Modifier.height(10.dp))
@@ -715,7 +736,7 @@ fun GasStrategyCard(
                 }"
             },
             color = CSub,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             modifier = Modifier.padding(
                 start = 14.dp,
                 top = 2.dp
