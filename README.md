@@ -9,15 +9,6 @@
 
 <br/>
 
-![Android](https://img.shields.io/badge/Android_Automotive-34%2B-0B2350?style=flat-square&logo=android&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack_Compose-0B2350?style=flat-square&logo=kotlin&logoColor=white)
-![Pleos](https://img.shields.io/badge/Pleos_Playground_SDK-Vehicle_·_NaviHelper_·_TTS-0B2350?style=flat-square)
-![Gleo](https://img.shields.io/badge/Gleo_AI-음성_명령-A9B3C6?style=flat-square)
-![Android Phone](https://img.shields.io/badge/Android_Phone-29%2B-A9B3C6?style=flat-square&logo=android&logoColor=white)
-![Google Calendar](https://img.shields.io/badge/Google_Calendar-일정_연동-A9B3C6?style=flat-square&logo=googlecalendar&logoColor=white)
-
-<br/>
-
 <img src="docs/images/pleos/01_home.png" width="88%" alt="WE'R EV 차량 앱 홈 화면"/>
 
 </div>
@@ -31,6 +22,7 @@
 - [화면 구성](#-화면-구성)
 - [어떻게 판단하나요](#-어떻게-판단하나요)
 - [📱 함께 쓰는 폰 앱](#-함께-쓰는-폰-앱)
+- [기술 스택](#-기술-스택)
 - [프로젝트 구조](#-프로젝트-구조)
 - [실행 방법](#-실행-방법)
 - [시연 조작법](#-시연-조작법)
@@ -153,6 +145,17 @@ flowchart LR
     <td align="center"><img src="docs/images/phone/06_pleos_sync.png" alt="Pleos 반영 · 원격 제어"/><br/><b>🚗 차량 · Pleos 반영</b><br/><sub>실주행 전비로 최종 전략 확정 · 원격 제어 · 내비 위젯 연동</sub></td>
   </tr>
 </table>
+
+<br/>
+
+## 🛠 기술 스택
+
+![Android](https://img.shields.io/badge/Android_Automotive-34%2B-0B2350?style=flat-square&logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack_Compose-0B2350?style=flat-square&logo=kotlin&logoColor=white)
+![Pleos](https://img.shields.io/badge/Pleos_Playground_SDK-Vehicle_·_NaviHelper_·_TTS-0B2350?style=flat-square)
+![Gleo](https://img.shields.io/badge/Gleo_AI-음성_명령-A9B3C6?style=flat-square)
+![Android Phone](https://img.shields.io/badge/Android_Phone-29%2B-A9B3C6?style=flat-square&logo=android&logoColor=white)
+![Google Calendar](https://img.shields.io/badge/Google_Calendar-일정_연동-A9B3C6?style=flat-square&logo=googlecalendar&logoColor=white)
 
 <br/>
 
