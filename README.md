@@ -2,18 +2,18 @@
 
 #  WE'R EV
 
-### 나의 일정과 주행에 맞춘 EREV 에너지 코치
+### 나의 주행에 맞춘 EREV 에너지 코치
 
-**SANTA FE EREV** 운전자에게 언제 · 어디서 · 무엇으로(전기 / 연료) 채울지 알려줘요<br/>
-📱 **폰 앱**이 일정을 보고 1차 전략을 세우고 → 🚗 **Pleos 차량 앱**이 실제 주행 데이터로 확정해요
+**SANTA FE EREV** 운전자를 위해, 언제 · 어디서 · 무엇으로(전기 / 연료) 채울지 알려주는 **Pleos 차량 앱**<br/>
+<sub>📱 함께 쓰는 폰 앱이 구글 캘린더 일정으로 미리 계획을 세워 차로 보내줘요</sub>
 
 <br/>
 
 ![Android](https://img.shields.io/badge/Android_Automotive-34%2B-0B2350?style=flat-square&logo=android&logoColor=white)
-![Android Phone](https://img.shields.io/badge/Android_Phone-29%2B-0B2350?style=flat-square&logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Jetpack_Compose-0B2350?style=flat-square&logo=kotlin&logoColor=white)
 ![Pleos](https://img.shields.io/badge/Pleos_Playground_SDK-Vehicle_·_NaviHelper_·_TTS-0B2350?style=flat-square)
 ![Gleo](https://img.shields.io/badge/Gleo_AI-음성_명령-A9B3C6?style=flat-square)
+![Android Phone](https://img.shields.io/badge/Android_Phone-29%2B-A9B3C6?style=flat-square&logo=android&logoColor=white)
 ![Google Calendar](https://img.shields.io/badge/Google_Calendar-일정_연동-A9B3C6?style=flat-square&logo=googlecalendar&logoColor=white)
 
 <br/>
@@ -27,11 +27,10 @@
 ## 📌 목차
 
 - [한눈에 보기](#-한눈에-보기)
-- [폰 → 차로 이어지는 흐름](#-폰--차로-이어지는-흐름)
 - [시연 영상](#-시연-영상)
-- [화면 구성 · 📱 폰 앱](#-화면-구성---폰-앱)
-- [화면 구성 · 🚗 차량 앱](#-화면-구성---차량-앱)
+- [화면 구성](#-화면-구성)
 - [어떻게 판단하나요](#-어떻게-판단하나요)
+- [📱 함께 쓰는 폰 앱](#-함께-쓰는-폰-앱)
 - [프로젝트 구조](#-프로젝트-구조)
 - [실행 방법](#-실행-방법)
 - [시연 조작법](#-시연-조작법)
@@ -42,33 +41,18 @@
 ## 💡 한눈에 보기
 
 EREV(주행거리 연장형 전기차)는 **배터리로 달리다가 부족하면 엔진이 발전**해서 달립니다.
-차는 스스로 "배터리 먼저, 그다음 발전"만 할 뿐, **내 일정 · 시간대별 전기요금 · 주유소 가격 · 목적지 충전 인프라 · 주차 시간**은 모릅니다.
+차는 스스로 "배터리 먼저, 그다음 발전"만 할 뿐, **시간대별 전기요금 · 주유소 가격 · 목적지 충전 인프라 · 주차 시간**은 모릅니다.
 
 WE'R EV는 그 빈틈을 채웁니다.
 
 | | 차 기본 모드 | **WE'R EV** |
 |---|---|---|
-| 일정 | 모름 | **구글 캘린더** 일정이 바뀌면 전략도 다시 세움 |
 | 충전 시각 | 도착하자마자 (피크 요금일 수도) | **가장 싼 시간대**에 집 충전 예약 |
 | 목적지 | 고려 안 함 | 완속 있으면 **주차하는 동안 충전** |
 | 급속 충전 | 보이면 충전 | 비싸고 오래 걸리면 **건너뛰고 발전 주행** |
 | 주유 | 아무 데서나 | 동선 위 **싼 주유소 · 넣을 시점**까지 |
 | 결과 | — | 절약액을 **WE'R Score · 포인트**로 보상 |
-
-<br/>
-
-## 🔗 폰 → 차로 이어지는 흐름
-
-<div align="center">
-<img src="docs/images/phone/00_overview.png" width="100%" alt="폰 앱 핵심 장면"/>
-</div>
-
-1. 📅 **구글 캘린더 연동** — 오늘 · 이번 주 일정과 동선을 불러와요
-2. 🐌 **르르르(Gleo AI 어시스턴트)** — 일정이 바뀌면 감지하고, 목적지 충전 인프라 · 유가를 확인해 **1차 충전 전략**을 다시 세워요
-   - 예) 판교 외근 미팅 추가 → *「판교에서 10분만 충전하세요」* / 저녁 약속 장소 여의도 → 하남 → *「하남에서 30분만 충전하세요」*
-3. 🚗 **Pleos로 보내기** — 차량의 최근 2주 실주행 전비를 반영해 **최종 전략 확정** (하남 충전 30분 → 40분)
-4. 🔌 **원격 제어** — 집 충전 예약 · 목적지 차로 보내기 · 주유소 경유지 등록 · 출발 전 공조
-5. 🗺 **주행 중** — Pleos Connect 내비 위젯에서 결정적인 순간에만 한 줄로 안내
+| 일정 | 모름 | 📱 폰 앱이 **구글 캘린더** 일정을 보고 미리 계획 |
 
 <br/>
 
@@ -86,24 +70,7 @@ WE'R EV는 그 빈틈을 채웁니다.
 
 <br/>
 
-## 📱 화면 구성 · 폰 앱
-
-<table>
-  <tr>
-    <td width="33%" align="center"><img src="docs/images/phone/01_home.png" alt="오늘"/><br/><b>🏠 오늘</b><br/><sub>오늘의 전략 한마디 · 배터리/연료 · 오늘 일정과 구간별 전기 주행</sub></td>
-    <td width="33%" align="center"><img src="docs/images/phone/02_calendar.png" alt="캘린더"/><br/><b>📅 캘린더</b><br/><sub>구글 캘린더 일정 확인 · 추가 · 편집</sub></td>
-    <td width="33%" align="center"><img src="docs/images/phone/03_rrr_detect.png" alt="르르르 일정 변경 감지"/><br/><b>🐌 르르르 · 일정 변경 감지</b><br/><sub>바뀐 일정 · 충전 인프라 · 동선 위 최저가 주유소 확인</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="docs/images/phone/04_pangyo.png" alt="판교 10분 충전"/><br/><b>⚡ 1차 전략 · 판교</b><br/><sub>새 외근 일정 → 판교에서 10분만 충전</sub></td>
-    <td align="center"><img src="docs/images/phone/05_hanam.png" alt="하남 30분 충전"/><br/><b>⚡ 1차 전략 · 하남</b><br/><sub>약속 장소 변경 → 하남에서 30분 충전</sub></td>
-    <td align="center"><img src="docs/images/phone/06_pleos_sync.png" alt="Pleos 반영 · 원격 제어"/><br/><b>🚗 차량 · Pleos 반영</b><br/><sub>실주행 전비로 최종 전략 확정 · 원격 제어 · 내비 위젯 연동</sub></td>
-  </tr>
-</table>
-
-<br/>
-
-## 🚗 화면 구성 · 차량 앱
+## 🖥 화면 구성
 
 <table>
   <tr>
@@ -152,6 +119,40 @@ flowchart LR
 - **폰 1차 전략 → 차 최종 전략** — 폰은 일정 · 인프라 · 유가로 먼저 계획하고, 차는 최근 실주행 전비(히터 사용 등)를 반영해 충전 시간을 보정
 - **결정적 순간 음성** — 주행당 1번만, 위젯 한 줄과 같은 문장을 TTS로 안내 (운전 중 시선 분산 최소화)
 - **WE'R Score (100점)** — 제안 실천 50 · 절약 30 · 심야 충전 20
+
+<br/>
+
+## 📱 함께 쓰는 폰 앱
+
+차에 타기 전, 폰 앱(`WE_R_EV_Phone`)이 **구글 캘린더 일정**을 보고 1차 충전 전략을 세워 Pleos 차량 앱으로 보내요. 차량 앱은 실제 주행 데이터로 그 전략을 최종 확정해요.
+
+### 폰 → 차로 이어지는 흐름
+
+<div align="center">
+<img src="docs/images/phone/00_overview.png" width="100%" alt="폰 앱 핵심 장면"/>
+</div>
+
+1. 📅 **구글 캘린더 연동** — 오늘 · 이번 주 일정과 동선을 불러와요
+2. 🐌 **르르르(Gleo AI 어시스턴트)** — 일정이 바뀌면 감지하고, 목적지 충전 인프라 · 유가를 확인해 **1차 충전 전략**을 다시 세워요
+   - 예) 판교 외근 미팅 추가 → *「판교에서 10분만 충전하세요」* / 저녁 약속 장소 여의도 → 하남 → *「하남에서 30분만 충전하세요」*
+3. 🚗 **Pleos로 보내기** — 차량의 최근 2주 실주행 전비를 반영해 **최종 전략 확정** (하남 충전 30분 → 40분)
+4. 🔌 **원격 제어** — 집 충전 예약 · 목적지 차로 보내기 · 주유소 경유지 등록 · 출발 전 공조
+5. 🗺 **주행 중** — Pleos Connect 내비 위젯에서 결정적인 순간에만 한 줄로 안내
+
+### 폰 앱 화면
+
+<table>
+  <tr>
+    <td width="33%" align="center"><img src="docs/images/phone/01_home.png" alt="오늘"/><br/><b>🏠 오늘</b><br/><sub>오늘의 전략 한마디 · 배터리/연료 · 오늘 일정과 구간별 전기 주행</sub></td>
+    <td width="33%" align="center"><img src="docs/images/phone/02_calendar.png" alt="캘린더"/><br/><b>📅 캘린더</b><br/><sub>구글 캘린더 일정 확인 · 추가 · 편집</sub></td>
+    <td width="33%" align="center"><img src="docs/images/phone/03_rrr_detect.png" alt="르르르 일정 변경 감지"/><br/><b>🐌 르르르 · 일정 변경 감지</b><br/><sub>바뀐 일정 · 충전 인프라 · 동선 위 최저가 주유소 확인</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/phone/04_pangyo.png" alt="판교 10분 충전"/><br/><b>⚡ 1차 전략 · 판교</b><br/><sub>새 외근 일정 → 판교에서 10분만 충전</sub></td>
+    <td align="center"><img src="docs/images/phone/05_hanam.png" alt="하남 30분 충전"/><br/><b>⚡ 1차 전략 · 하남</b><br/><sub>약속 장소 변경 → 하남에서 30분 충전</sub></td>
+    <td align="center"><img src="docs/images/phone/06_pleos_sync.png" alt="Pleos 반영 · 원격 제어"/><br/><b>🚗 차량 · Pleos 반영</b><br/><sub>실주행 전비로 최종 전략 확정 · 원격 제어 · 내비 위젯 연동</sub></td>
+  </tr>
+</table>
 
 <br/>
 
