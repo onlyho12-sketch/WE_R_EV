@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WE'R EV 계기판 로고 (Brand.kt / MainActivity.kt 의 WerEvLogo 와 같은 비율) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 네이비 바늘판: 145° → 330° -->
+    <path
+        android:pathData="M35.67,66.83 A22.375,22.375 0 1 1 73.38,42.81"
+        android:strokeColor="#002C5F"
+        android:strokeWidth="5.25"
+        android:strokeLineCap="round" />
+    <!-- 회색 구간: 330° → 35° -->
+    <path
+        android:pathData="M73.38,42.81 A22.375,22.375 0 0 1 72.33,66.83"
+        android:strokeColor="#BDB8B2"
+        android:strokeWidth="5.25"
+        android:strokeLineCap="round" />
+    <!-- 바늘 -->
+    <path
+        android:pathData="M54,55.5 L62.5,42"
+        android:strokeColor="#002C5F"
+        android:strokeWidth="3.26"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#002C5F"
+        android:pathData="M50.48,55.5 a3.52,3.52 0 1 0 7.04,0 a3.52,3.52 0 1 0 -7.04,0z" />
+</vector>

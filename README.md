@@ -114,7 +114,7 @@ flowchart LR
 
 ```
 WE_R_EV/
-├── rrr_pleos_3/rrr_pleos_3/          # 🚗 차량 앱 (Gradle 프로젝트)
+├── WE_R_EV_Pleos/                    # 🚗 차량 앱 (Gradle 프로젝트)
 │   ├── app/                          #    WE'R EV 차량 앱  ─ com.example.rrr
 │   │   └── src/main/java/com/example/rrr/
 │   │       ├── MainActivity.kt       #      홈 · 전략 · 사이드바 · Gleo 대화창
@@ -126,7 +126,7 @@ WE_R_EV/
 │   │       └── pleos/                #      Pleos SDK 게이트웨이 (Vehicle · Navi · TTS)
 │   ├── pleos_connect/                #    Pleos Connect 차량 화면 시뮬레이터 ─ com.example.pleosconnect
 │   └── docs/                         #    워크플로우 · 검증 문서
-├── rrr_phone/                        # 📱 폰 앱 ─ com.example.rrrphone
+├── WE_R_EV_Phone/                    # 📱 폰 앱 ─ com.example.rrrphone
 │                                     #    구글 캘린더 일정 → 1차 충전 전략 → Pleos 로 전송
 └── docs/
     ├── images/                       #    README 스크린샷
@@ -145,7 +145,7 @@ WE_R_EV/
 ### 빌드 & 설치
 
 ```bash
-cd rrr_pleos_3/rrr_pleos_3
+cd WE_R_EV_Pleos
 
 # 차량 앱
 ./gradlew :app:installDebug
