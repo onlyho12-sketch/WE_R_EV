@@ -19,7 +19,7 @@
 | 항목 | 내용 |
 |---|---|
 | **앱 이름** | WE'R EV — SANTA FE EREV 운전자를 위한 충전 · 주유 전략 코치 (Pleos 차량 앱 + 폰 앱) |
-| **APK (Release)** | **[GitHub Release v1.0.0](https://github.com/onlyho12-sketch/WE_R_EV/releases/tag/v1.0.0)** — `LRRing_WE_R_EV_Pleos_release.apk` (차량 앱) · `LRRing_WE_R_EV_Phone_release.apk` (폰 앱) |
+| **APK** | 저장소 [`apk/`](apk/) 폴더 — [`LRRing_WE_R_EV_Pleos_release.apk`](apk/LRRing_WE_R_EV_Pleos_release.apk) (차량 앱) · [`LRRing_WE_R_EV_Phone_release.apk`](apk/LRRing_WE_R_EV_Phone_release.apk) (폰 앱)<br/>동일 파일: **[GitHub Release v1.0.0](https://github.com/onlyho12-sketch/WE_R_EV/releases/tag/v1.0.0)** |
 | **에뮬레이터** | **Pleos Connect v2.1.0** |
 | **화면 규격** | 2560 × 1440 (가로), Android Automotive API 34 이상 |
 | **폰 앱 환경** | Android 폰 / 에뮬레이터 API 29 이상 |
@@ -30,8 +30,8 @@
 **APK로 바로 실행하기**
 
 ```bash
-adb install LRRing_WE_R_EV_Pleos_release.apk   # Pleos Connect v2.1.0 에뮬레이터에 차량 앱 설치
-adb install LRRing_WE_R_EV_Phone_release.apk   # 폰 / 폰 에뮬레이터에 폰 앱 설치
+adb install apk/LRRing_WE_R_EV_Pleos_release.apk   # Pleos Connect v2.1.0 에뮬레이터에 차량 앱 설치
+adb install apk/LRRing_WE_R_EV_Phone_release.apk   # 폰 / 폰 에뮬레이터에 폰 앱 설치
 ```
 
 <br/>
@@ -267,7 +267,6 @@ adb shell am start -a com.example.rrr.action.SET_TRIP \
 - **구글 캘린더 · 르르르** — 시연용 데모 계정(`demo.user@gmail.com`) 일정과 데모 응답으로 동작합니다.
 - **음성(TTS)** — Pleos TTS 를 먼저 사용하고, Pleos 서비스가 없는 기기(일반 에뮬레이터)에서는 안드로이드 기본 TTS 로 대신 읽습니다.
 - **Pleos SDK 연결** — Vehicle · NaviHelper · TTS 연결에 실패하면 각 기능이 데모 값으로 동작합니다. 실시간 차량 값을 받으면 「PLEOS 실시간」 배지가 표시됩니다.
-- **차량 화면 시뮬레이터** — `WereEV_PleosConnect.html` 주행 목업(1920×1080)의 레이아웃 · 아이콘을 Compose 로 옮겼습니다.
 
 <br/>
 
