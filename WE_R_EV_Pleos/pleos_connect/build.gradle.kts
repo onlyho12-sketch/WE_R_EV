@@ -20,6 +20,13 @@ android {
         versionName = "1.0"
     }
 
+    buildTypes {
+        release {
+            // 시연용 Release APK: 별도 키 없이 설치되도록 debug 키로 서명
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
