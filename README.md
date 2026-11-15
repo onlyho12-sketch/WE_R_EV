@@ -71,9 +71,9 @@ WE'R EV는 그 빈틈을 채웁니다.
 
 ## 🎬 영상
 
-> **[🎬 홍보 영상 보기 (docs/demo/WE_R_EV_홍보영상.mp4)](docs/demo/WE_R_EV_홍보영상.mp4)** · 1분 21초 · 소리 있음
+> **[🎬 홍보 영상 보기 (docs/demo/WE_R_EV_홍보영상.mp4)](docs/demo/WE_R_EV_홍보영상.mp4)**
 >
-> **[▶ 시연 영상 보기 (docs/demo/WE_R_EV_시연영상.mp4)](docs/demo/WE_R_EV_시연영상.mp4)** · 1분 35초 · 소리 있음
+> **[▶ 시연 영상 보기 (docs/demo/WE_R_EV_시연영상.mp4)](docs/demo/WE_R_EV_시연영상.mp4)**
 
 시연 영상 흐름
 
