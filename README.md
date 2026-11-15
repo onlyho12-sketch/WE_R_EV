@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ WE'R EV
+#  WE'R EV
 
 ### 나의 주행에 맞춘 EREV 에너지 코치
 
