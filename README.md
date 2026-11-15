@@ -25,7 +25,7 @@
 | **폰 앱 환경** | Android 폰 / 에뮬레이터 API 29 이상 |
 | **필요한 설정** | 별도 키 · 계정 설정 없음 — APK 설치 후 바로 실행 (데모 데이터 내장) |
 | **실행 방법** | [🚀 실행 방법](#-실행-방법) · [🎮 시연 조작법](#-시연-조작법) |
-| **영상** | [🎬 홍보 영상](docs/demo/WE_R_EV_promo.mp4) (1분 21초) · [▶ 시연 영상](docs/demo/WE_R_EV_demo.mp4) (1분 35초) |
+| **영상** | [🎬 홍보 영상](docs/demo/WE_R_EV_홍보영상.mp4) (1분 21초) · [▶ 시연 영상](docs/demo/WE_R_EV_시연영상.mp4) (1분 35초) |
 
 **APK로 바로 실행하기**
 
@@ -71,9 +71,9 @@ WE'R EV는 그 빈틈을 채웁니다.
 
 ## 🎬 영상
 
-> **[🎬 홍보 영상 보기 (docs/demo/WE_R_EV_promo.mp4)](docs/demo/WE_R_EV_promo.mp4)** · 1분 21초 · 소리 있음
+> **[🎬 홍보 영상 보기 (docs/demo/WE_R_EV_홍보영상.mp4)](docs/demo/WE_R_EV_홍보영상.mp4)** · 1분 21초 · 소리 있음
 >
-> **[▶ 시연 영상 보기 (docs/demo/WE_R_EV_demo.mp4)](docs/demo/WE_R_EV_demo.mp4)** · 1분 35초 · 소리 있음
+> **[▶ 시연 영상 보기 (docs/demo/WE_R_EV_시연영상.mp4)](docs/demo/WE_R_EV_시연영상.mp4)** · 1분 35초 · 소리 있음
 
 시연 영상 흐름
 
@@ -211,7 +211,7 @@ WE_R_EV/
 └── docs/
     ├── images/phone/                 #    README 스크린샷 (폰 앱)
     ├── images/pleos/                 #    README 스크린샷 (차량 앱)
-    └── demo/                         #    홍보 영상 (WE_R_EV_promo.mp4) · 시연 영상 (WE_R_EV_demo.mp4)
+    └── demo/                         #    홍보 영상 (WE_R_EV_홍보영상.mp4) · 시연 영상 (WE_R_EV_시연영상.mp4)
 ```
 
 <br/>
