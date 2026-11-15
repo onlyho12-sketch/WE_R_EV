@@ -1,13 +1,8 @@
 package com.example.rrrphone
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,14 +12,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -33,11 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rrrphone.ui.theme.AppText
 import kotlinx.coroutines.delay
-import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.math.sin
-import kotlin.random.Random
 
 // ───────────── 팔레트 (차량 앱 ui/theme/Tokens.kt 의 Hd 와 동일) ─────────────
 //  거의 흰색에 가까운 웜 그레이 배경 · 검정 타이포 · 얇은 라인, 포인트 컨러는 네이비 하나.
@@ -57,14 +44,13 @@ val Muted = Color(0xFFBDB8B2)
 val Blue = Navy
 val EvGreen = Navy
 val GasOrange = Color(0xFF8A8178)
-val LrrrCream = Color(0xFFFBE7C3)
 
 val Tone.color: Color get() = when (this) { Tone.Ev -> EvGreen; Tone.Gas -> GasOrange; Tone.Neutral -> Sub }
 
 // ───────────── 공통 ─────────────
 
 @Composable
-fun RCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+fun RCard(modifier: Modifier = Modifier, padding: Dp = 13.dp, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Surface)
             .border(1.dp, Line, RoundedCornerShape(16.dp)).padding(padding),
@@ -75,9 +61,9 @@ fun RCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composab
 @Composable
 fun SectionTitle(text: String, action: String? = null, onAction: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(text, color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(text, color = Ink, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         if (action != null) {
-            Text("$action ›", color = Blue, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            Text("$action ›", color = Blue, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clip(RoundedCornerShape(6.dp)).clickable(onClick = onAction).padding(4.dp))
         }
     }
@@ -86,7 +72,7 @@ fun SectionTitle(text: String, action: String? = null, onAction: () -> Unit = {}
 @Composable
 fun Tag(text: String, color: Color, filled: Boolean = false) {
     Text(
-        text, color = if (filled) Surface else color, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+        text, color = if (filled) Surface else color, fontSize = 11.sp, fontWeight = FontWeight.Bold,
         modifier = Modifier.clip(RoundedCornerShape(4.dp))
             .background(if (filled) color else color.copy(alpha = 0.1f))
             .padding(horizontal = 6.dp, vertical = 2.dp),
@@ -106,7 +92,7 @@ fun InfraTags(p: Place) {
 @Composable
 fun Pill(text: String, active: Boolean = false, onClick: () -> Unit) {
     Text(
-        text, color = if (active) Surface else Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+        text, color = if (active) Surface else Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium,
         modifier = Modifier.clip(RoundedCornerShape(18.dp))
             .background(if (active) Navy else Surface)
             .border(1.dp, if (active) Navy else Line, RoundedCornerShape(18.dp))
@@ -124,7 +110,7 @@ fun PleosPill(synced: Boolean) {
         Box(Modifier.size(7.dp).clip(CircleShape).background(if (synced) Navy else Muted))
         Spacer(Modifier.width(6.dp))
         Text(if (synced) "Pleos 반영됨" else "Pleos 연결됨", color = if (synced) Navy else Sub,
-            fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -155,20 +141,20 @@ fun DayItems(s: DayStrategy) {
 @Composable
 private fun StopRow(st: PlanItem.Stop) {
     Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-        Text(st.time, color = Sub, fontSize = 12.sp, fontWeight = FontWeight.Medium, lineHeight = 16.sp,
+        Text(st.time, color = Sub, fontSize = 13.sp, fontWeight = FontWeight.Medium, lineHeight = 18.sp,
             modifier = Modifier.width(78.dp).padding(top = 2.dp))
         Box(Modifier.padding(top = 5.dp).size(10.dp).clip(CircleShape)
             .background(if (st.isNew) Blue else Ink))
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(st.title, color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(st.title, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 if (st.isNew) { Spacer(Modifier.width(6.dp)); Tag("새 일정", Blue, filled = true) }
             }
-            Text(st.place.name, color = Faint, fontSize = 12.sp)
+            Text(st.place.name, color = Faint, fontSize = 13.sp)
             st.note?.let {
                 Spacer(Modifier.height(3.dp))
-                Text(it, color = st.tone.color, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(it, color = st.tone.color, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -177,7 +163,7 @@ private fun StopRow(st: PlanItem.Stop) {
 @Composable
 private fun DriveRow(l: Leg) {
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Text(hm(l.depart), color = Faint, fontSize = 11.sp, modifier = Modifier.width(78.dp).padding(top = 6.dp))
+        Text(hm(l.depart), color = Faint, fontSize = 12.sp, modifier = Modifier.width(78.dp).padding(top = 6.dp))
         Box(Modifier.width(10.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
             Box(Modifier.width(2.dp).fillMaxHeight().background(Line))
         }
@@ -185,16 +171,16 @@ private fun DriveRow(l: Leg) {
         Column(Modifier.weight(1f).padding(vertical = 6.dp).clip(RoundedCornerShape(8.dp)).background(Field)
             .padding(horizontal = 10.dp, vertical = 8.dp)) {
             Text("${l.distKm.roundToInt()}km · 약 ${((l.arrive - l.depart) * 60).roundToInt()}분",
-                color = Sub, fontSize = 12.sp)
+                color = Sub, fontSize = 13.sp)
             Spacer(Modifier.height(5.dp))
             EnergyBar(l.evKm, l.gasKm, Modifier.fillMaxWidth())
             Spacer(Modifier.height(4.dp))
             Row {
-                if (l.evKm >= 0.5) Text("전기 ${l.evKm.roundToInt()}km", color = EvGreen, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                if (l.evKm >= 0.5 && l.gasKm >= 0.5) Text("  ·  ", color = Faint, fontSize = 11.sp)
-                if (l.gasKm >= 0.5) Text("발전 ${l.gasKm.roundToInt()}km", color = GasOrange, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                if (l.evKm >= 0.5) Text("전기 ${l.evKm.roundToInt()}km", color = EvGreen, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                if (l.evKm >= 0.5 && l.gasKm >= 0.5) Text("  ·  ", color = Faint, fontSize = 12.sp)
+                if (l.gasKm >= 0.5) Text("발전 ${l.gasKm.roundToInt()}km", color = GasOrange, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.weight(1f))
-                Text("배터리 ${l.socStart.roundToInt()}→${l.socEnd.roundToInt()}%", color = Faint, fontSize = 11.sp)
+                Text("배터리 ${l.socStart.roundToInt()}→${l.socEnd.roundToInt()}%", color = Faint, fontSize = 12.sp)
             }
         }
     }
@@ -208,38 +194,38 @@ fun StrategyCard(state: AppState, s: DayStrategy, showChart: Boolean = true, sho
     RCard {
         Text(
             if (synced) "최종 전략 · Pleos 주행 데이터 반영" else "1차 전략 · 캘린더 + 충전 인프라",
-            color = if (synced) EvGreen else Blue, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+            color = if (synced) EvGreen else Blue, fontSize = 12.sp, fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(6.dp))
-        Text(LrrrAgent.headline(s), color = Ink, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+        Text(LrrrAgent.headline(s), color = Ink, fontSize = 25.sp, lineHeight = 31.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(2.dp))
-        Text(LrrrAgent.benefit(s), color = EvGreen, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(LrrrAgent.benefit(s), color = EvGreen, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         Text("${dateLabel(s.date, state.today)} ${s.totalKm.roundToInt()}km · 전기 ${s.evKm.roundToInt()}km / 발전 ${s.gasKm.roundToInt()}km",
-            color = Faint, fontSize = 11.sp)
+            color = Faint, fontSize = 12.sp)
         if (showItems) {
-            Spacer(Modifier.height(10.dp)); DayItems(s)
+            Spacer(Modifier.height(8.dp)); DayItems(s)
         }
         if (showChart && s.legs.isNotEmpty()) {
-            Spacer(Modifier.height(14.dp))
-            Text("에너지 공급 계획", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            Text("에너지 공급 계획", color = Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(6.dp))
             SupplyTimelineChart(s.timeline)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(9.dp))
             GasStrategyCard(s.gas)
         }
         val actions = LrrrAgent.actions(s)
-        if (actions.isNotEmpty()) Spacer(Modifier.height(12.dp))
+        if (actions.isNotEmpty()) Spacer(Modifier.height(9.dp))
         actions.forEach { a ->
             val done = a.key in state.done
             Text(
                 if (done) a.done else a.label,
-                color = if (done) EvGreen else Ink, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                color = if (done) EvGreen else Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(RoundedCornerShape(10.dp))
                     .background(if (done) NavySoft else Surface)
                     .border(1.dp, if (done) Color.Transparent else Line, RoundedCornerShape(10.dp))
                     .clickable { if (!done) { state.done += a.key; state.showToast(a.done) } }
-                    .padding(vertical = 11.dp),
+                    .padding(vertical = 8.dp),
             )
         }
         Spacer(Modifier.height(6.dp))
@@ -260,86 +246,54 @@ fun PleosButton(state: AppState, s: DayStrategy) {
         ),
     ) {
         Text(if (synced) "✓ 차량(Pleos)에 최종 전략 반영됨" else "Pleos로 보내기 · 주행 데이터로 확정",
-            fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
 // ───────────── 르르르 캐릭터 ─────────────
+//  그림은 RrrMoments.kt — 차량 앱과 같은 Canvas 벡터 캐릭터.
+//  (예전엔 lrrr_clean.png 한 장을 통통 튀게 하고 눈만 덮어 깜빡였는데, 이제 입·팔·더듬이가 다 움직인다)
 
-private val LrrrEyes = listOf(Offset(0.3708f, 0.2463f), Offset(0.6205f, 0.2463f))
-private const val LRRR_ASPECT = 358f / 480f
+/** 말풍선 타이핑 속도(24ms/글자)에 입 모양을 맞추기 위한 길이 */
+fun talkMsFor(message: String) = 300 + message.length * 24
+
+/** 히어로 아이콘(⚡/⛽) — 그날 주행 거리의 다수를 차지하는 에너지 */
+val DayStrategy.heroEnergy: Energy get() = if (gasKm > evKm) Energy.Gas else Energy.Electric
 
 @Composable
-fun LrrrAvatar(size: Dp) {
-    Image(
-        painter = painterResource(R.drawable.lrrr_clean), contentDescription = "르르르",
-        contentScale = ContentScale.Fit,
-        modifier = Modifier.size(size).clip(CircleShape).background(Color(0xFFFFF2DF))
-            .padding(top = size * 0.14f, start = size * 0.09f, end = size * 0.09f),
-    )
-}
+fun LrrrAvatar(size: Dp) = RrrFaceAvatar(size)
 
-/** 홈 화면 히어로: 말풍선 + 통통 튀는 르르르 (차량 앱 LrrrHero 와 같은 동작) */
+/** 홈 화면 히어로: 말풍선 + 말하는 르르르 (차량 앱 CarHeroScene 과 같은 동작) */
 @Composable
-fun LrrrHero(message: String, modifier: Modifier = Modifier) {
+fun LrrrHero(message: String, energy: Energy = Energy.Electric, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        SpeechBubble(message, Modifier.weight(1f).padding(bottom = 54.dp, end = 6.dp))
-        BouncyLrrr(greetKey = message, width = 84.dp)
+        SpeechBubble(message, Modifier.weight(1f).padding(bottom = 26.dp, end = 2.dp))
+        BouncyLrrr(greetKey = message, width = 120.dp, energy = energy, talkMs = talkMsFor(message))
     }
 }
 
+/**
+ * 말풍선 옆에서 말하는 르르르. greetKey 가 바뀌면 처음부터 다시 — 말풍선 글자가 찍히는 동안
+ * 입을 뻥끗거리고 손을 흔든다. (애니메이션은 Canvas 안에서만 돌아 재구성이 일어나지 않음)
+ */
 @Composable
-fun BouncyLrrr(greetKey: Any, width: Dp, modifier: Modifier = Modifier) {
-    // 반응성: 애니메이션 값은 그리기 단계(graphicsLayer/Canvas)에서만 읽음 → 매 프레임 재구성(recomposition) 없음
-    //  (대화에 르르르가 여러 마리 있으면 예전엔 전부 매 프레임 재구성돼서 스크롤이 버벅였음)
-    val phase = rememberInfiniteTransition(label = "lrrr").animateFloat(
-        0f, 1f, infiniteRepeatable(tween(1300, easing = LinearEasing)), label = "bounce",
+fun BouncyLrrr(
+    greetKey: Any,
+    width: Dp,
+    modifier: Modifier = Modifier,
+    energy: Energy = Energy.Electric,
+    talkMs: Int = 1200,
+) {
+    RrrMomentAnimation(
+        moment = RrrMoment.Talk, energy = energy, key = greetKey, talkMs = talkMs,
+        modifier = modifier.size(width = width, height = width / RrrMoment.Talk.aspect),
     )
-    val hop = remember { Animatable(1f) }
-    LaunchedEffect(greetKey) { hop.snapTo(0f); hop.animateTo(1f, tween(560)) }
-    val lift = { abs(sin(phase.value * PI)).toFloat() }
-    val hopLift = { sin(hop.value * PI).toFloat() }
-    var blink by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        while (true) { delay(2600L + Random.nextLong(1200L)); blink = true; delay(130); blink = false }
-    }
-    val h = width / LRRR_ASPECT
-    Box(modifier.size(width = width, height = h + 30.dp)) {
-        Canvas(Modifier.align(Alignment.BottomCenter).size(width = width * 0.7f, height = 10.dp)) {
-            val k = 1f - 0.35f * maxOf(lift() * 0.4f, hopLift())
-            val sw = size.width * k
-            drawOval(Color.Black.copy(alpha = 0.13f * k), Offset((size.width - sw) / 2f, 0f), Size(sw, size.height))
-        }
-        Box(
-            Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp).size(width = width, height = h)
-                .graphicsLayer {
-                    val l = lift()
-                    val squash = (1f - l) * (1f - l) * 0.05f
-                    translationY = -(l * 4f + hopLift() * 18f).dp.toPx()
-                    scaleX = 1f + squash; scaleY = 1f - squash
-                    rotationZ = sin(hop.value * 2 * PI).toFloat() * 6f
-                    transformOrigin = TransformOrigin(0.5f, 1f)
-                }
-        ) {
-            Image(painterResource(R.drawable.lrrr_clean), "르르르", contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize())
-            if (blink) Canvas(Modifier.fillMaxSize()) {
-                LrrrEyes.forEach { e ->
-                    val c = Offset(e.x * size.width, e.y * size.height)
-                    val rx = size.width * 0.05f; val ry = size.height * 0.04f
-                    drawOval(LrrrCream, Offset(c.x - rx, c.y - ry), Size(rx * 2, ry * 2))
-                    drawLine(Ink, Offset(c.x - rx * 0.7f, c.y), Offset(c.x + rx * 0.7f, c.y),
-                        strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
-                }
-            }
-        }
-    }
 }
 
 /** 차량 앱 말풍선과 같은 톤: 연한 웜 그레이 배경 + 테두리 없음 */
 private val BubbleBg = Field
 private val BubbleText = Color(0xFF333231)
-private val bubbleText = AppText.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium, lineBreak = LineBreak.Heading)
+private val bubbleText = AppText.copy(fontSize = 15.sp, lineHeight = 22.sp, fontWeight = FontWeight.Medium, lineBreak = LineBreak.Heading)
 
 @Composable
 fun SpeechBubble(message: String, modifier: Modifier = Modifier, animate: Boolean = true) {
@@ -361,7 +315,7 @@ fun SpeechBubble(message: String, modifier: Modifier = Modifier, animate: Boolea
     ) {
         Box(
             Modifier.background(BubbleBg, RoundedCornerShape(14.dp))
-                .padding(horizontal = 14.dp, vertical = 11.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Text(message, style = bubbleText, color = Color.Transparent)
             Text(message.take(shown), style = bubbleText, color = BubbleText)

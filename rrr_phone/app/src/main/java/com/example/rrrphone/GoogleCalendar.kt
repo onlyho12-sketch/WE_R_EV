@@ -2,6 +2,7 @@ package com.example.rrrphone
 
 import android.Manifest
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -43,8 +44,54 @@ object GoogleCalendar {
         val noPlace: List<String>,
     )
 
+    val PERMISSIONS = arrayOf(PERMISSION, Manifest.permission.WRITE_CALENDAR)
+
     fun hasPermission(ctx: Context) =
         ContextCompat.checkSelfPermission(ctx, PERMISSION) == PackageManager.PERMISSION_GRANTED
+
+    fun hasWritePermission(ctx: Context) =
+        ContextCompat.checkSelfPermission(ctx, Manifest.permission.WRITE_CALENDAR) == PackageManager.PERMISSION_GRANTED
+
+    /**
+     * 앱에서 입력한 일정을 기기 캘린더(= 구글 계정 캘린더)에 실제로 써넣는다.
+     * 구글 캘린더 앱을 띄우는 대신 앱 안에서 입력받을 때 쓰는 길 — 저장되는 곳은 똑같다.
+     */
+    suspend fun insert(ctx: Context, e: CalEvent): Boolean = withContext(Dispatchers.IO) {
+        val calId = writableCalendarId(ctx) ?: return@withContext false
+        val zone = ZoneId.systemDefault()
+        val begin = e.date.atTime(e.start).atZone(zone).toInstant().toEpochMilli()
+        val endDate = if (e.overnight) e.date.plusDays(1) else e.date
+        val end = endDate.atTime(e.end).atZone(zone).toInstant().toEpochMilli()
+        val v = ContentValues().apply {
+            put(Events.CALENDAR_ID, calId)
+            put(Events.TITLE, e.title)
+            put(Events.EVENT_LOCATION, e.place.name)
+            put(Events.DTSTART, begin)
+            put(Events.DTEND, end)
+            put(Events.EVENT_TIMEZONE, zone.id)
+            put(Events.ALL_DAY, 0)
+        }
+        runCatching { ctx.contentResolver.insert(Events.CONTENT_URI, v) }.getOrNull() != null
+    }
+
+    /** 쓸 수 있는 캘린더 — 구글 계정 것 우선 */
+    private fun writableCalendarId(ctx: Context): Long? {
+        var google: Long? = null
+        var any: Long? = null
+        ctx.contentResolver.query(
+            Calendars.CONTENT_URI,
+            arrayOf(Calendars._ID, Calendars.ACCOUNT_TYPE, Calendars.CALENDAR_ACCESS_LEVEL),
+            null, null, null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                if (c.getInt(2) < Calendars.CAL_ACCESS_CONTRIBUTOR) continue
+                val id = c.getLong(0)
+                if (any == null) any = id
+                if (c.getString(1) == GOOGLE_TYPE && google == null) google = id
+            }
+        }
+        return google ?: any
+    }
 
     /** 구글 캘린더 앱에서 새 일정 입력 화면 열기 */
     fun insertIntent(date: LocalDate, startH: Int = 19): Intent {

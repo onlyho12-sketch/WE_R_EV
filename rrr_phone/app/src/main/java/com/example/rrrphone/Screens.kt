@@ -35,8 +35,8 @@ fun HomeScreen(state: AppState) {
     val today = state.today
     val s = state.strategy(today)
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         // 차량 앱 홈과 같은 머리: WE'R EV 로고 → 큰 제목 → 한 줄 설명
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -44,10 +44,10 @@ fun HomeScreen(state: AppState) {
             PleosPill(state.isSynced(today))
         }
         Column {
-            Text("SANTA FE EREV", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
-            Text("나의 일정에 맞춘 에너지 코치 · ${fullDate(today)} ${hm(DEMO_NOW_H)}", color = Sub, fontSize = 13.sp)
+            Text("SANTA FE EREV", color = Ink, fontSize = 33.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
+            Text("나의 일정에 맞춘 에너지 코치 · ${fullDate(today)} ${hm(DEMO_NOW_H)}", color = Sub, fontSize = 14.sp)
         }
-        RCard(padding = 14.dp) { LrrrHero(LrrrAgent.brief(s)) }
+        RCard(padding = 12.dp) { LrrrHero(LrrrAgent.brief(s), s.heroEnergy) }
         CarStrip(state.car)
         GoogleSyncCard(state, compact = true)
         SectionTitle("오늘 일정", "캘린더") { state.selectedDate = today; state.tab = 1 }
@@ -60,31 +60,31 @@ fun HomeScreen(state: AppState) {
 
 @Composable
 private fun CarStrip(car: VehicleState) {
-    RCard(padding = 14.dp) {
+    RCard(padding = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("배터리 · 연료", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Text("${car.at.name} 주차 중", color = Faint, fontSize = 11.sp)
+                Text("배터리 · 연료", color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("${car.at.name} 주차 중", color = Faint, fontSize = 12.sp)
             }
             Stat("${car.soc}%", "배터리", EvGreen)
             Spacer(Modifier.width(16.dp))
             Stat("${car.fuel}%", "연료", GasOrange)
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(Field)) {
             if (car.soc > 0) Box(Modifier.weight(car.soc.toFloat()).fillMaxHeight().background(EvGreen))
             if (car.soc < 100) Spacer(Modifier.weight((100 - car.soc).toFloat()))
         }
         Text("전기로 ${((car.soc - RESERVE_PCT).coerceAtLeast(0) / 100.0 * EV_FULL_KM).roundToInt()}km 더 갈 수 있어요 (예비 ${RESERVE_PCT}% 제외)",
-            color = Sub, fontSize = 11.sp, modifier = Modifier.padding(top = 5.dp))
+            color = Sub, fontSize = 12.sp, modifier = Modifier.padding(top = 5.dp))
     }
 }
 
 @Composable
 private fun Stat(value: String, label: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Text(label, color = Faint, fontSize = 10.sp)
+        Text(value, color = color, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = Faint, fontSize = 11.sp)
     }
 }
 
@@ -94,7 +94,7 @@ private fun Stat(value: String, label: String, color: Color) {
 @Composable
 fun GoogleSyncCard(state: AppState, compact: Boolean = false) {
     val connected = state.googleConnected
-    RCard(padding = 14.dp) {
+    RCard(padding = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(NavySoft),
@@ -102,14 +102,14 @@ fun GoogleSyncCard(state: AppState, compact: Boolean = false) {
             ) { LineIcon(Ic.Calendar, Navy, size = 20.dp) }
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text(if (connected) "구글 캘린더 연동됨" else "구글 캘린더 연동", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(if (connected) "구글 캘린더 연동됨" else "구글 캘린더 연동", color = Ink, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Text(
                     when {
                         state.syncing -> "일정 읽는 중…"
                         connected -> listOfNotNull(state.googleAccount, "${syncedAgo(state.googleSyncedAt)} 동기화").joinToString(" · ")
                         else -> "구글 캘린더 일정으로 충전 전략을 세워요"
                     },
-                    color = Faint, fontSize = 11.sp, maxLines = 1,
+                    color = Faint, fontSize = 12.sp, maxLines = 1,
                 )
             }
             Spacer(Modifier.width(8.dp))
@@ -125,16 +125,16 @@ fun GoogleSyncCard(state: AppState, compact: Boolean = false) {
                     CircularProgressIndicator(Modifier.size(14.dp), color = Surface, strokeWidth = 2.dp)
                     Spacer(Modifier.width(6.dp))
                 }
-                Text(if (connected) "동기화" else "연동", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(if (connected) "동기화" else "연동", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
         if (!compact && !connected) {
             Spacer(Modifier.height(8.dp))
             Text("구글 캘린더에 일정을 넣고 연동을 누르면, 르르르가 바뀐 일정과 장소의 충전 인프라를 보고 전략을 다시 세워요.",
-                color = Sub, fontSize = 12.sp, lineHeight = 17.sp)
+                color = Sub, fontSize = 13.sp, lineHeight = 19.sp)
         }
         if (!compact && connected) {
-            Text("연동 해제", color = Faint, fontSize = 11.sp,
+            Text("연동 해제", color = Faint, fontSize = 12.sp,
                 modifier = Modifier.padding(top = 6.dp).clip(RoundedCornerShape(4.dp))
                     .clickable { state.disconnectGoogle() }.padding(2.dp))
         }
@@ -158,15 +158,15 @@ fun CalendarScreen(state: AppState) {
     val day = state.events.filter { it.date == sel }.sortedBy { it.start }
     Box(Modifier.fillMaxSize()) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
-            Text("캘린더", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
-            Text("${sel.year}년 ${sel.monthValue}월 · 출근은 Pleos 주행 패턴에서 찾은 루틴", color = Faint, fontSize = 12.sp)
+            Text("캘린더", color = Ink, fontSize = 33.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
+            Text("${sel.year}년 ${sel.monthValue}월 · 출근은 Pleos 주행 패턴에서 찾은 루틴", color = Faint, fontSize = 13.sp)
             GoogleSyncCard(state)
             WeekStrip(state)
-            Text(fullDate(sel), color = Ink, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
-            if (day.isEmpty()) RCard { Text("일정이 없어요. 아래 버튼으로 구글 캘린더에 추가해 보세요.", color = Faint, fontSize = 13.sp) }
+            Text(fullDate(sel), color = Ink, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+            if (day.isEmpty()) RCard { Text("일정이 없어요. 아래 버튼으로 구글 캘린더에 추가해 보세요.", color = Faint, fontSize = 14.sp) }
             day.forEach { e ->
                 EventRow(
                     e,
@@ -181,37 +181,34 @@ fun CalendarScreen(state: AppState) {
                     LrrrAvatar(40.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("이날 르르르 전략", color = Faint, fontSize = 11.sp)
-                        Text(LrrrAgent.headline(s), color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                        Text("${s.totalKm.roundToInt()}km · 전기 ${s.evKm.roundToInt()} / 발전 ${s.gasKm.roundToInt()}km",
-                            color = Sub, fontSize = 12.sp)
+                        Text("이날 르르르 전략", color = Faint, fontSize = 12.sp)
+                        Text(LrrrAgent.headline(s), color = Ink, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("${s.totalKm.roundToInt()}km · 전기 ${s.evKm.roundToInt()}km / 발전 ${s.gasKm.roundToInt()}km",
+                            color = Sub, fontSize = 13.sp)
                     }
-                    Text(if (showStrategy) "접기 ▲" else "자세히 ▼", color = Blue, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(if (showStrategy) "접기 ▲" else "자세히 ▼", color = Blue, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             if (showStrategy) StrategyCard(state, s)
-            Spacer(Modifier.height(72.dp))
+            Spacer(Modifier.height(52.dp))
         }
         Row(
             Modifier.align(Alignment.BottomEnd).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("빠른 입력", color = Sub, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+            Text("빠른 입력", color = Sub, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(Surface).border(1.dp, Line, RoundedCornerShape(20.dp))
-                    .clickable { adding = true }.padding(horizontal = 14.dp, vertical = 10.dp))
+                    .clickable { adding = true }.padding(horizontal = 14.dp, vertical = 8.dp))
             Spacer(Modifier.width(8.dp))
             ExtendedFloatingActionButton(
-                onClick = {
-                    // 구글 캘린더 앱에서 입력 → 돌아오면 자동 동기화. 캘린더 앱이 없으면 앱 안 입력으로
-                    if (!state.openGoogleCalendar(GoogleCalendar.insertIntent(sel))) adding = true
-                },
+                onClick = { state.googleEditorDate = sel },
                 containerColor = Blue, contentColor = Surface,
                 shape = RoundedCornerShape(28.dp),
-            ) { Text("+  구글 캘린더에 추가", fontSize = 15.sp, fontWeight = FontWeight.Bold) }
+            ) { Text("+  구글 캘린더에 추가", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
         }
     }
     if (adding) {
-        AddEventSheet(state, sel, onDismiss = { adding = false }) { e ->
+        AddEventSheet(state, sel, toGoogle = false, onDismiss = { adding = false }) { e ->
             adding = false
             state.addEvent(e)
             state.tab = 2
@@ -232,9 +229,9 @@ private fun WeekStrip(state: AppState) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val dow = d.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.KOREAN)
-                Text(if (d == state.today) "오늘" else dow, fontSize = 11.sp,
+                Text(if (d == state.today) "오늘" else dow, fontSize = 12.sp,
                     color = if (active) Surface.copy(alpha = 0.7f) else Faint)
-                Text("${d.dayOfMonth}", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = if (active) Surface else Ink)
+                Text("${d.dayOfMonth}", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = if (active) Surface else Ink)
                 Row(Modifier.height(8.dp).padding(top = 3.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     evs.take(3).forEach {
                         Box(Modifier.size(5.dp).clip(CircleShape).background(if (it.routine) Faint else Blue))
@@ -256,7 +253,7 @@ private fun EventRow(e: CalEvent, onOpen: (() -> Unit)?, onDelete: () -> Unit) {
         Column(Modifier.weight(1f).padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (e.overnight) "${hm(e.startH)} ~ 1박" else "${hm(e.startH)} – ${hm(e.endH)}",
-                    color = Sub, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    color = Sub, fontSize = 13.sp, modifier = Modifier.weight(1f))
                 when {
                     e.routine -> Tag("루틴", Faint)
                     e.google != null -> Tag("구글 캘린더", Blue, filled = true)
@@ -264,15 +261,15 @@ private fun EventRow(e: CalEvent, onOpen: (() -> Unit)?, onDelete: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(4.dp))
-            Text(e.title, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(e.title, color = Ink, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(e.place.name, color = Faint, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                Text(e.place.name, color = Faint, fontSize = 13.sp, modifier = Modifier.weight(1f))
                 InfraTags(e.place)
             }
             if (e.google != null) {
-                Text("탭하면 구글 캘린더에서 수정 › 돌아오면 자동 반영", color = Faint, fontSize = 11.sp, modifier = Modifier.padding(top = 6.dp))
+                Text("탭하면 구글 캘린더에서 수정 › 돌아오면 자동 반영", color = Faint, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
             } else if (!e.routine) {
-                Text("삭제", color = Faint, fontSize = 12.sp,
+                Text("삭제", color = Faint, fontSize = 13.sp,
                     modifier = Modifier.padding(top = 6.dp).clip(RoundedCornerShape(4.dp)).clickable(onClick = onDelete).padding(2.dp))
             }
         }
@@ -281,7 +278,13 @@ private fun EventRow(e: CalEvent, onOpen: (() -> Unit)?, onDelete: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddEventSheet(state: AppState, initial: LocalDate, onDismiss: () -> Unit, onSave: (CalEvent) -> Unit) {
+private fun AddEventSheet(
+    state: AppState,
+    initial: LocalDate,
+    toGoogle: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (CalEvent) -> Unit,
+) {
     val today = state.today
     var title by remember { mutableStateOf("") }
     var place by remember { mutableStateOf(DemoPlaces.Hanam) }
@@ -305,10 +308,15 @@ private fun AddEventSheet(state: AppState, initial: LocalDate, onDismiss: () -> 
     ) {
         Column(
             Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
-            Text("새 일정", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Text("빠른 입력", color = Faint, fontSize = 12.sp)
+            Text(if (toGoogle) "구글 캘린더에 새 일정" else "새 일정", color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(
+                if (toGoogle) "${state.googleAccount ?: "구글 계정"} 캘린더에 저장돼요"
+                else "이 앱에서만 쓰는 일정이에요",
+                color = Faint, fontSize = 13.sp,
+            )
+            Text("빠른 입력", color = Faint, fontSize = 13.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(LrrrAgent.templates(today)) { t ->
                     Pill(t.label) {
@@ -322,15 +330,15 @@ private fun AddEventSheet(state: AppState, initial: LocalDate, onDismiss: () -> 
                 label = { Text("제목") }, placeholder = { Text("${place.short} 일정") },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("장소", color = Faint, fontSize = 12.sp)
+            Text("장소", color = Faint, fontSize = 13.sp)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(DemoPlaces.all) { p -> Pill(p.short, active = p == place) { place = p } }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(place.name, color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                Text(place.name, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                 InfraTags(place)
             }
-            Text("충전 인프라 · ${infraText(place)}", color = Sub, fontSize = 12.sp)
+            Text("충전 인프라 · ${infraText(place)}", color = Sub, fontSize = 13.sp)
             HorizontalDivider(color = Line)
             Stepper("날짜", dateLabel(date, today), { if (date > today) date = date.minusDays(1) }, { date = date.plusDays(1) })
             Stepper("시작", "%02d:%02d".format(startMin / 60, startMin % 60),
@@ -341,8 +349,8 @@ private fun AddEventSheet(state: AppState, initial: LocalDate, onDismiss: () -> 
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("1박", color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Text("오늘 밤 집에 안 들어가요 (집 충전 불가)", color = Faint, fontSize = 11.sp)
+                    Text("1박", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text("오늘 밤 집에 안 들어가요 (집 충전 불가)", color = Faint, fontSize = 12.sp)
                 }
                 Switch(overnight, { overnight = it }, colors = SwitchDefaults.colors(checkedTrackColor = Blue))
             }
@@ -362,7 +370,10 @@ private fun AddEventSheet(state: AppState, initial: LocalDate, onDismiss: () -> 
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Blue),
-            ) { Text("저장하고 르르르에게 전략 받기", fontSize = 15.sp, fontWeight = FontWeight.Bold) }
+            ) {
+                Text(if (toGoogle) "구글 캘린더에 저장" else "저장하고 르르르에게 전략 받기",
+                    fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -370,9 +381,9 @@ private fun AddEventSheet(state: AppState, initial: LocalDate, onDismiss: () -> 
 @Composable
 private fun Stepper(label: String, value: String, onMinus: () -> Unit, onPlus: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+        Text(label, color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
         RoundBtn("−", onMinus)
-        Text(value, color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+        Text(value, color = Ink, fontSize = 16.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
             modifier = Modifier.width(120.dp))
         RoundBtn("+", onPlus)
     }
@@ -383,7 +394,7 @@ private fun RoundBtn(label: String, onClick: () -> Unit) {
     Box(
         Modifier.size(34.dp).clip(CircleShape).border(1.dp, Line, CircleShape).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Text(label, color = Ink, fontSize = 17.sp) }
+    ) { Text(label, color = Ink, fontSize = 19.sp) }
 }
 
 // ═════════════════════════ 르르르 (에이전트 대화) ═════════════════════════
@@ -405,26 +416,31 @@ fun AgentScreen(state: AppState) {
     val send = { if (input.isNotBlank()) { state.ask(input); input = "" } }
 
     Column(Modifier.fillMaxSize().imePadding()) {
-        Row(Modifier.fillMaxWidth().background(Surface).padding(horizontal = 16.dp, vertical = 10.dp),
+        Row(Modifier.fillMaxWidth().background(Surface).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
             LrrrAvatar(40.dp)
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text("르르르", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("Gleo AI 어시스턴트 · 데모 응답", color = Faint, fontSize = 11.sp)
+                Text("르르르", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Gleo AI 어시스턴트 · 데모 응답", color = Faint, fontSize = 12.sp)
             }
             PleosPill(state.isSynced(state.today))
         }
         HorizontalDivider(color = Line)
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(), state = list,
-            contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
             items(state.chat, key = { it.id }) { item ->
                 when (item) {
                     is ChatItem.User -> UserBubble(item.text)
                     is ChatItem.Lrrr -> LrrrBubble(item.text)
                     is ChatItem.Run -> RunBlock(state, item, toBottom)
+                    is ChatItem.Widget -> Row(verticalAlignment = Alignment.Top) {
+                        LrrrAvatar(32.dp)
+                        Spacer(Modifier.width(8.dp))
+                        NaviWidgetCard(item.strategy, Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -444,7 +460,7 @@ fun AgentScreen(state: AppState) {
         ) {
             OutlinedTextField(
                 value = input, onValueChange = { input = it }, singleLine = true,
-                placeholder = { Text("르르르에게 일정 말하기", fontSize = 14.sp) },
+                placeholder = { Text("르르르에게 일정 말하기", fontSize = 15.sp) },
                 shape = RoundedCornerShape(24.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { send() }),
@@ -455,7 +471,7 @@ fun AgentScreen(state: AppState) {
                 Modifier.size(48.dp).clip(CircleShape).background(if (input.isBlank()) Blue.copy(alpha = 0.4f) else Blue)
                     .clickable(enabled = input.isNotBlank()) { send() },
                 contentAlignment = Alignment.Center,
-            ) { Text("↑", color = Surface, fontSize = 20.sp, fontWeight = FontWeight.Bold) }
+            ) { Text("↑", color = Surface, fontSize = 22.sp, fontWeight = FontWeight.Bold) }
         }
     }
 }
@@ -463,9 +479,9 @@ fun AgentScreen(state: AppState) {
 @Composable
 private fun UserBubble(text: String) {
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-        Text(text, color = Surface, fontSize = 14.sp, lineHeight = 20.sp,
+        Text(text, color = Surface, fontSize = 15.sp, lineHeight = 22.sp,
             modifier = Modifier.widthIn(max = 280.dp).clip(RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp))
-                .background(Blue).padding(horizontal = 14.dp, vertical = 10.dp))
+                .background(Blue).padding(horizontal = 14.dp, vertical = 8.dp))
     }
 }
 
@@ -474,10 +490,10 @@ private fun LrrrBubble(text: String) {
     Row(verticalAlignment = Alignment.Top) {
         LrrrAvatar(32.dp)
         Spacer(Modifier.width(8.dp))
-        Text(text, color = Ink, fontSize = 14.sp, lineHeight = 21.sp,
+        Text(text, color = Ink, fontSize = 15.sp, lineHeight = 23.sp,
             modifier = Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(4.dp, 18.dp, 18.dp, 18.dp))
                 .background(Surface).border(1.dp, Line, RoundedCornerShape(4.dp, 18.dp, 18.dp, 18.dp))
-                .padding(horizontal = 14.dp, vertical = 10.dp))
+                .padding(horizontal = 14.dp, vertical = 8.dp))
     }
 }
 
@@ -494,21 +510,21 @@ private fun RunBlock(state: AppState, run: ChatItem.Run, onGrow: () -> Unit) {
             delay(100); onGrow()
         }
     }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.Top) {
             LrrrAvatar(32.dp)
             Spacer(Modifier.width(8.dp))
             Column(
                 Modifier.weight(1f).clip(RoundedCornerShape(4.dp, 18.dp, 18.dp, 18.dp)).background(Field)
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Text(if (shown > run.steps.size) "확인 완료" else "르르르가 확인하고 있어요…",
-                    color = Faint, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    color = Faint, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 run.steps.forEachIndexed { i, step ->
                     if (i < shown) Row {
-                        Text("✓ ", color = EvGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(step, color = Sub, fontSize = 12.sp, lineHeight = 17.sp)
+                        Text("✓ ", color = EvGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(step, color = Sub, fontSize = 13.sp, lineHeight = 19.sp)
                     }
                 }
             }
@@ -517,8 +533,12 @@ private fun RunBlock(state: AppState, run: ChatItem.Run, onGrow: () -> Unit) {
             Box(Modifier.fillMaxWidth()) {
                 Column {
                     Row(verticalAlignment = Alignment.Bottom) {
-                        SpeechBubble(run.message, Modifier.weight(1f).padding(bottom = 50.dp, end = 4.dp), animate = !already)
-                        BouncyLrrr(greetKey = run.id, width = 64.dp)
+                        SpeechBubble(run.message, Modifier.weight(1f).padding(bottom = 24.dp, end = 2.dp), animate = !already)
+                        BouncyLrrr(
+                            greetKey = run.id, width = 92.dp,
+                            energy = run.strategy.heroEnergy,
+                            talkMs = if (already) 0 else talkMsFor(run.message),
+                        )
                     }
                     StrategyCard(state, run.strategy, showChart = false, showItems = true)
                 }
@@ -536,42 +556,25 @@ fun CarScreen(state: AppState) {
     val synced = state.isSynced(today)
     val s = state.strategy(today)
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("SANTA FE EREV", color = Ink, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
-                Text("Pleos Connect · 차량 상태 실시간 (데모 값)", color = Sub, fontSize = 13.sp)
+                Text("SANTA FE EREV", color = Ink, fontSize = 33.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.8).sp)
+                Text("Pleos Connect · 차량 상태 실시간", color = Sub, fontSize = 15.sp)
             }
             PleosPill(synced)
         }
 
-        // 폰 → 차 흐름
-        RCard(padding = 14.dp) {
-            Text("전략이 만들어지는 길", color = Faint, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FlowStep(Ic.Calendar, "캘린더", "일정 입력", true, Modifier.weight(1f))
-                LineIcon(Ic.ArrowRight, Faint, size = 16.dp)
-                FlowStep(Ic.Phone, "르르르", "인프라+일정", true, Modifier.weight(1f))
-                LineIcon(Ic.ArrowRight, Faint, size = 16.dp)
-                FlowStep(Ic.Car, "Pleos", "주행 데이터", synced, Modifier.weight(1f))
-            }
-        }
-
         RCard {
             Gauge("배터리", car.soc, EvGreen,
-                "전기 ${((car.soc - RESERVE_PCT).coerceAtLeast(0) / 100.0 * BATTERY_KWH * PLEOS_KM_PER_KWH).roundToInt()}km (실전비 기준)",
-                { state.car = car.copy(soc = (car.soc - 10).coerceAtLeast(0)) },
-                { state.car = car.copy(soc = (car.soc + 10).coerceAtMost(100)) })
-            Spacer(Modifier.height(14.dp))
+                "전기 ${((car.soc - RESERVE_PCT).coerceAtLeast(0) / 100.0 * BATTERY_KWH * PLEOS_KM_PER_KWH).roundToInt()}km (실전비 기준)")
+            Spacer(Modifier.height(9.dp))
             Gauge("연료", car.fuel, GasOrange,
-                "발전 ${(car.fuel / 100.0 * FUEL_TANK_L * GAS_KM_PER_L).roundToInt()}km",
-                { state.car = car.copy(fuel = (car.fuel - 10).coerceAtLeast(0)) },
-                { state.car = car.copy(fuel = (car.fuel + 10).coerceAtMost(100)) })
-            Spacer(Modifier.height(10.dp))
-            Text("${car.at.name} · 주차 중  ·  −/+ 는 시연용", color = Faint, fontSize = 11.sp)
+                "발전 ${(car.fuel / 100.0 * FUEL_TANK_L * GAS_KM_PER_L).roundToInt()}km")
+            Spacer(Modifier.height(8.dp))
+            Text("${car.at.name} · 주차 중", color = Faint, fontSize = 14.sp)
         }
 
         SectionTitle("Pleos 주행 데이터 · 최근 2주")
@@ -580,17 +583,17 @@ fun CarScreen(state: AppState) {
                 DataCell("실주행 전비", "$PLEOS_KM_PER_KWH", "km/kWh · 공인 $KM_PER_KWH", Modifier.weight(1f))
                 DataCell("하루 평균", "38", "km 주행", Modifier.weight(1f))
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(9.dp))
             Row {
                 DataCell("전기 주행 비율", "72", "%", Modifier.weight(1f))
                 DataCell("하루 발전", "${DAILY_GAS_KM.roundToInt()}", "km 평균", Modifier.weight(1f))
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Text("겨울철 히터 사용으로 공인 전비보다 10% 낮아요. 최종 전략은 이 값으로 다시 계산해요.",
-                color = Sub, fontSize = 12.sp, lineHeight = 17.sp)
+                color = Sub, fontSize = 13.sp, lineHeight = 19.sp)
         }
 
-        SectionTitle("차에서 하던 걸 폰에서")
+        SectionTitle("원격 제어")
         RCard(padding = 4.dp) {
             val homeKey = "$today:home"
             Remote(Ic.Plug, "집 충전 예약", if (homeKey in state.done) "${s.homeCharge?.let { hm(it.first) } ?: "23:00"} 예약됨" else "꺼짐",
@@ -610,17 +613,18 @@ fun CarScreen(state: AppState) {
         SectionTitle("오늘 최종 전략")
         if (synced) {
             RCard {
-                Text("✓ Pleos에 반영됨", color = EvGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("✓ Pleos에 반영됨", color = EvGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
-                Text(LrrrAgent.headline(s), color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(LrrrAgent.headline(s), color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
-                Text(LrrrAgent.finalizeMessage(state.phoneStrategy(today), s), color = Sub, fontSize = 13.sp, lineHeight = 19.sp)
+                Text(LrrrAgent.finalizeMessage(state.phoneStrategy(today), s), color = Sub, fontSize = 14.sp, lineHeight = 21.sp)
             }
+            NaviWidgetCard(s)
         } else {
             RCard {
                 Text("폰에서 세운 1차 전략을 차로 보내면, Pleos가 실제 주행 데이터(전비·주행 패턴)로 다시 계산해서 최종 확정해요.",
-                    color = Sub, fontSize = 13.sp, lineHeight = 19.sp)
-                Spacer(Modifier.height(12.dp))
+                    color = Sub, fontSize = 14.sp, lineHeight = 21.sp)
+                Spacer(Modifier.height(9.dp))
                 PleosButton(state, s)
             }
         }
@@ -633,30 +637,13 @@ private fun AppState.toggle(key: String) {
 }
 
 @Composable
-private fun FlowStep(icon: Ic, title: String, sub: String, on: Boolean, modifier: Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(40.dp).clip(CircleShape).background(if (on) NavySoft else Field),
-            contentAlignment = Alignment.Center) { LineIcon(icon, if (on) Navy else Faint, size = 20.dp) }
-        Spacer(Modifier.height(4.dp))
-        Text(title, color = if (on) Ink else Faint, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text(sub, color = Faint, fontSize = 10.sp)
-    }
-}
-
-@Composable
-private fun Gauge(label: String, pct: Int, color: Color, sub: String, onMinus: () -> Unit, onPlus: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(label, color = Sub, fontSize = 13.sp)
-                Spacer(Modifier.width(8.dp))
-                Text("$pct%", color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            }
-            Text(sub, color = Faint, fontSize = 11.sp)
-        }
-        RoundBtn("−", onMinus)
+private fun Gauge(label: String, pct: Int, color: Color, sub: String) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Text(label, color = Sub, fontSize = 16.sp)
         Spacer(Modifier.width(8.dp))
-        RoundBtn("+", onPlus)
+        Text("$pct%", color = color, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.weight(1f))
+        Text(sub, color = Faint, fontSize = 14.sp)
     }
     Spacer(Modifier.height(6.dp))
     Row(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Field)) {
@@ -668,22 +655,22 @@ private fun Gauge(label: String, pct: Int, color: Color, sub: String, onMinus: (
 @Composable
 private fun DataCell(label: String, value: String, unit: String, modifier: Modifier) {
     Column(modifier) {
-        Text(label, color = Faint, fontSize = 11.sp)
+        Text(label, color = Faint, fontSize = 12.sp)
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, color = Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(value, color = Ink, fontSize = 25.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.width(4.dp))
-            Text(unit, color = Sub, fontSize = 11.sp, modifier = Modifier.padding(bottom = 3.dp))
+            Text(unit, color = Sub, fontSize = 12.sp, modifier = Modifier.padding(bottom = 3.dp))
         }
     }
 }
 
 @Composable
 private fun Remote(icon: Ic, title: String, sub: String, on: Boolean, onToggle: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(34.dp)) { LineIcon(icon, if (on) Navy else Sub, size = 22.dp) }
         Column(Modifier.weight(1f)) {
-            Text(title, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Text(sub, color = Faint, fontSize = 11.sp)
+            Text(title, color = Ink, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(sub, color = Faint, fontSize = 12.sp)
         }
         Switch(on, { onToggle() }, colors = SwitchDefaults.colors(checkedTrackColor = Blue))
     }

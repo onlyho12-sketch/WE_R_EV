@@ -30,7 +30,7 @@ object LrrrAgent {
         return listOf(
             Template("🛍 퇴근 후 쇼핑", "스타필드 쇼핑", DemoPlaces.Hanam, 0, 19 * 60, 120),
             Template("👪 부모님 댁 저녁", "부모님 댁 저녁", DemoPlaces.Hwado, 0, 19 * 60, 180),
-            Template("💼 판교 외근", "판교 외근 미팅", DemoPlaces.Pangyo, 1, 13 * 60, 180),
+            Template("💼 판교 외근", "판교 외근 미팅", DemoPlaces.Pangyo, 2, 13 * 60, 180),
             Template("⛺ 주말 캠핑 1박", "퇴촌 캠핑", DemoPlaces.Toechon, (if (toSat == 0) 7 else toSat).toLong(), 14 * 60, 0, overnight = true),
         )
     }
@@ -168,6 +168,23 @@ object LrrrAgent {
         }
     }
 
+    /**
+     * 주행 중 내비 위젯에 뜨는 한 줄. 평소엔 조용하다가 '결정적인 순간'에만 말하는 톤이라
+     * 그날 전략에서 운전자가 꼭 알아야 할 한 가지만 고른다.
+     */
+    fun naviWidgetLine(s: DayStrategy): String {
+        val c = s.charges.firstOrNull()
+        return when {
+            c != null -> "${c.place.short} 주차장 ${c.charger.type.label}에 대세요 · ${c.durText}"
+            s.skipped.isNotEmpty() && s.gasKm >= 1 -> "곧 ${s.skipped.first().short} 급속충전소 — 그냥 지나가요"
+            s.gas.fillInDays == 0 && s.legs.isNotEmpty() -> "${s.station.short} 들러서 주유하고 가요"
+            s.homeCharge != null -> "배터리 다 써도 돼요 · 밤에 집에서 채워요"
+            !s.homeTonight && s.gasKm >= 1 -> "배터리는 돌아올 때 쓸게요"
+            s.legs.isEmpty() -> "오늘은 이동 계획이 없어요"
+            else -> "충전 생각 말고 그대로 가요"
+        }
+    }
+
     /** Pleos 가 주행 데이터로 확정한 최종 전략 설명 */
     fun finalizeMessage(phone: DayStrategy, final: DayStrategy): String {
         val parts = mutableListOf("Pleos 연동 완료! 최근 2주 실주행 전비 ${PLEOS_KM_PER_KWH}km/kWh(히터 사용)를 반영해서 최종 전략을 확정했어요.")
@@ -176,7 +193,7 @@ object LrrrAgent {
         if (fc != null && pc?.minutes != fc.minutes) parts += "${fc.place.short} 충전 ${minText(pc?.minutes ?: 0)} → ${fc.durText}으로 늘렸어요."
         if (abs(final.gasKm - phone.gasKm) >= 1) parts += "발전 주행 ${phone.gasKm.roundToInt()}km → ${final.gasKm.roundToInt()}km."
         if (parts.size == 1) parts += "1차 전략 그대로 가도 충분해요."
-        parts += "주행 중엔 내비 위젯에서 한 줄로 알려드릴게요."
+        parts += "내비 위젯까지 연동했어요 — 주행 중엔 아래처럼 한 줄로만 알려드릴게요."
         return parts.joinToString(" ")
     }
 

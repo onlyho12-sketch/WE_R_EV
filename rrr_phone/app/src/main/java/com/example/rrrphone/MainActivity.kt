@@ -52,6 +52,8 @@ sealed interface ChatItem {
     data class Lrrr(override val id: Long, val text: String) : ChatItem
     /** 새 일정 → 에이전트가 단계별로 확인하고 전략을 내놓는 한 묶음 */
     data class Run(override val id: Long, val steps: List<String>, val message: String, val strategy: DayStrategy) : ChatItem
+    /** Pleos 전송 후 — 주행 중 내비 위젯에 뜰 모습 */
+    data class Widget(override val id: Long, val strategy: DayStrategy) : ChatItem
 }
 
 /**
@@ -91,6 +93,10 @@ class AppState(val today: LocalDate, private val prefs: SharedPreferences? = nul
     var requestGoogleSync: () -> Unit = {}
     /** 구글 캘린더 앱 열기 (돌아오면 자동 동기화). 열 앱이 없으면 false */
     var openGoogleCalendar: (Intent) -> Boolean = { false }
+    /** 앱에서 입력한 일정을 구글 캘린더에 써넣기 (PhoneApp 에서 연결) */
+    var addEventToGoogle: (CalEvent) -> Unit = {}
+    /** 구글 캘린더 일정 입력 화면 (null 이면 닫힘) */
+    var googleEditorDate by mutableStateOf<LocalDate?>(null)
 
     init {
         chat += ChatItem.Lrrr(nextId(), LrrrAgent.GREETING)
@@ -205,6 +211,7 @@ class AppState(val today: LocalDate, private val prefs: SharedPreferences? = nul
         val fin = finalStrategy(date)
         synced[date] = fingerprint(date)
         chat += ChatItem.Lrrr(nextId(), LrrrAgent.finalizeMessage(phone, fin))
+        chat += ChatItem.Widget(nextId(), fin)
         if (tab != 2) unread = true
         showToast("Pleos로 전송 · 주행 데이터 반영 최종 전략 확정")
     }
@@ -236,8 +243,8 @@ fun PhoneApp() {
             }
         }
     }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) runSync(true)
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted[GoogleCalendar.PERMISSION] == true) runSync(true)
         else {
             val canAskAgain = (ctx as? Activity)?.shouldShowRequestPermissionRationale(GoogleCalendar.PERMISSION) == true
             if (canAskAgain) state.showToast("캘린더 권한이 있어야 구글 캘린더 일정을 읽을 수 있어요")
@@ -255,11 +262,37 @@ fun PhoneApp() {
     }
     SideEffect {
         state.requestGoogleSync = {
-            if (GoogleCalendar.hasPermission(ctx)) runSync(true) else permission.launch(GoogleCalendar.PERMISSION)
+            if (GoogleCalendar.hasPermission(ctx)) runSync(true) else permission.launch(GoogleCalendar.PERMISSIONS)
+        }
+        state.addEventToGoogle = { e ->
+            if (!GoogleCalendar.hasWritePermission(ctx)) {
+                state.showToast("캘린더 쓰기 권한을 허용하면 구글 캘린더에 바로 넣어드려요")
+                permission.launch(GoogleCalendar.PERMISSIONS)
+            } else scope.launch {
+                state.syncing = true
+                val ok = GoogleCalendar.insert(ctx, e)
+                delay(400)                       // 저장되는 걸 보여줄 만큼은 머무르게
+                state.syncing = false
+                state.showToast(
+                    if (ok) "구글 캘린더에 ‘${e.title}’ 저장됨 · 연동을 누르면 전략을 다시 세워요"
+                    else "구글 캘린더에 저장하지 못했어요",
+                )
+            }
         }
         state.openGoogleCalendar = { intent ->
             try { calendarApp.launch(intent); true } catch (_: ActivityNotFoundException) { false }
         }
+    }
+
+    // 구글 캘린더 입력 화면은 하단 탭까지 덮는 전체 화면
+    val editing = state.googleEditorDate
+    if (editing != null) {
+        GoogleCalendarEditor(
+            today = state.today, initial = editing, account = state.googleAccount,
+            onClose = { state.googleEditorDate = null },
+            onSave = { e -> state.googleEditorDate = null; state.addEventToGoogle(e) },
+        )
+        return
     }
 
     Scaffold(containerColor = Bg, bottomBar = { BottomNav(state) }) { pad ->
@@ -272,10 +305,10 @@ fun PhoneApp() {
             }
             state.toast?.let {
                 Text(
-                    it, color = Surface, fontSize = 13.sp,
+                    it, color = Surface, fontSize = 14.sp,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp, start = 24.dp, end = 24.dp)
                         .clip(RoundedCornerShape(20.dp)).background(Ink.copy(alpha = 0.88f))
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
@@ -302,7 +335,7 @@ private fun BottomNav(state: AppState) {
                         if (i == 2 && state.unread) Box(Modifier.align(Alignment.TopEnd).size(8.dp).clip(RoundedCornerShape(4.dp)).background(Navy))
                     }
                     Spacer(Modifier.height(3.dp))
-                    Text(label, fontSize = 11.sp, color = if (active) Navy else Faint,
+                    Text(label, fontSize = 12.sp, color = if (active) Navy else Faint,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Medium)
                 }
             }
